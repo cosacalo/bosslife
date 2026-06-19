@@ -111,4 +111,18 @@ const links = [
       gap: 3rem;
     }
   }
+  /* Mobile tap comfort: roomier vertical hit area on the footer links. */
+  @media (max-width: 640px) {
+    .footer__nav a,
+    .footer__contact a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+    }
+    .footer__legal a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+    }
+  }
 </style>

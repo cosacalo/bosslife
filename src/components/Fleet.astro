@@ -149,7 +149,9 @@ const jetskiVenues = jetskis[0]?.venues ?? [{ name: 'Direct', url: '#contact' }]
     position: relative;
     border-radius: var(--radius-xl);
     overflow: hidden;
-    background: radial-gradient(120% 140% at 100% 0%, #2a8af0 0%, var(--color-azure) 55%, #0b66c4 100%);
+    /* Deepened azure so the small white blurb clears WCAG AA 4.5:1 across the
+       whole panel (raw brand azure + white is only ~4.37). */
+    background: radial-gradient(120% 140% at 100% 0%, #1570d4 0%, #0a5fbe 55%, #074a94 100%);
     color: var(--color-white);
     box-shadow: var(--shadow-md);
     display: grid;

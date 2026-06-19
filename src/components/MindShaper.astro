@@ -170,9 +170,10 @@ const beats = [
     color: #1a2e4a;
   }
 
-  /* Speed: azure fill, white type (large only, ~4:1, fine for display). */
+  /* Speed: azure fill, white type. Deepened from raw brand azure so the small
+     body line also clears WCAG AA 4.5:1 (raw #0C78E4 white is only ~4.37). */
   .mind__panel--speed {
-    background: radial-gradient(130% 130% at 12% 0%, #2a8af0 0%, var(--color-azure) 60%);
+    background: radial-gradient(130% 130% at 12% 0%, #1570d4 0%, #0a5fbe 60%);
   }
   .mind__panel--speed .mind__label,
   .mind__panel--speed .mind__line {

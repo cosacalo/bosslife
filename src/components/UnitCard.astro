@@ -258,6 +258,13 @@ const chips = (unit.chips || []).slice(0, 3);
     }
   }
 
+  /* Mobile tap comfort: grow the editorial "View" link toward a 44px target. */
+  @media (max-width: 640px) {
+    .unit-card__view {
+      padding-block: 0.5rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .unit-card,
     .unit-card__media img,
