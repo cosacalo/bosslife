@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import MindShaper from '../components/MindShaper.astro';
+import Fleet from '../components/Fleet.astro';
+import Trust from '../components/Trust.astro';
+import About from '../components/About.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base path="/">
+  <Nav />
+  <main>
+    {/* SPEC mind-journey: feeling first, logistics after, about-us low.
+        Hero -> mind-shaper (#2 prime slot) -> fleet -> the easy part ->
+        our story (about, lower) -> contact. */}
+    <Hero />
+    <MindShaper />
+    <Fleet />
+    <Trust />
+    <About />
+    <Contact />
+  </main>
+  <Footer />
+</Base>

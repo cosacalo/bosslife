@@ -1,0 +1,207 @@
+---
+// THE MIND-SHAPER — the prime slot (#2), directly under the hero.
+// Job: make the visitor picture THEIR day across the whole fleet (water / road /
+// a little speed) before meeting any specific unit. Customer-focused, not about
+// us. Copy is locked (copy.md §2).
+//
+// Design: a bold brand-color bento. The "water" beat carries a real boat photo;
+// "road" is a sun-yellow panel, "speed" an azure panel. Equal billing is held by
+// giving all three the same footprint language (full-bleed panel, oversized
+// label, one feeling line) and the same visual weight, just in the three brand
+// colors. This is the page's signature device and the "Boss Life" energy: the
+// palette does the work, not pictograms.
+import { Image } from 'astro:assets';
+import waterPhoto from '../assets/units/stella/stella-01.jpg';
+
+const beats = [
+  {
+    key: 'water',
+    label: 'On the water',
+    line: 'Anchor at a sandbar, swim off the back, watch for dolphins, and let the day stretch out.',
+  },
+  {
+    key: 'road',
+    label: 'On the road',
+    line: 'Pack up, point the trailer somewhere good, and make the trip part of the fun.',
+  },
+  {
+    key: 'speed',
+    label: 'A little speed',
+    line: 'Hop on a jet ski and be out on the bay in minutes.',
+  },
+];
+---
+
+<section class="mind section-y" id="mind" aria-labelledby="mind-h">
+  <div class="container-x">
+    <div class="mind__head reveal">
+      <h2 class="t-h1 mind__title" id="mind-h">However you picture a good day out here.</h2>
+      <p class="mind__tie">
+        Whatever your kind of day looks like, we keep it ready. You just round up your people and go.
+      </p>
+    </div>
+
+    <div class="mind__grid">
+      <article class="mind__panel mind__panel--water reveal">
+        <Image
+          class="mind__photo"
+          src={waterPhoto}
+          alt="A Boss Life deck boat anchored on calm turquoise water in Sarasota."
+          widths={[600, 900, 1200]}
+          sizes="(min-width: 880px) 56vw, 100vw"
+          loading="lazy"
+        />
+        <div class="mind__panel-body">
+          <h3 class="mind__label">On the water</h3>
+          <p class="mind__line">{beats[0].line}</p>
+        </div>
+      </article>
+
+      <article class="mind__panel mind__panel--road reveal" style="--reveal-delay: 90ms">
+        <div class="mind__panel-body">
+          <h3 class="mind__label">On the road</h3>
+          <p class="mind__line">{beats[1].line}</p>
+        </div>
+      </article>
+
+      <article class="mind__panel mind__panel--speed reveal" style="--reveal-delay: 160ms">
+        <div class="mind__panel-body">
+          <h3 class="mind__label">A little speed</h3>
+          <p class="mind__line">{beats[2].line}</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .mind {
+    background-color: var(--color-surface);
+  }
+  .mind__head {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: clamp(2.25rem, 1.75rem + 2.5vw, 3.5rem);
+  }
+  .mind__title {
+    color: var(--color-ink);
+    max-width: 18ch;
+  }
+  .mind__tie {
+    font-size: clamp(1.125rem, 1.05rem + 0.4vw, 1.4rem);
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--color-ink);
+    max-width: 34ch;
+  }
+
+  /* Bento: water photo tall on the left, sun + azure panels stacked on the
+     right. Each panel shares the same radius, padding language, and oversized
+     label so billing stays equal across the three brand colors. */
+  .mind__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 0.75rem + 1.25vw, 1.5rem);
+  }
+  .mind__panel {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    min-height: clamp(15rem, 12rem + 18vw, 18rem);
+    display: flex;
+    isolation: isolate;
+  }
+  .mind__panel-body {
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+    padding: clamp(1.5rem, 1.25rem + 1.25vw, 2.25rem);
+  }
+  .mind__label {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.625rem, 1.4rem + 1vw, 2.125rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+  }
+  .mind__line {
+    margin-top: 0.75rem;
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    line-height: 1.5;
+    max-width: 36ch;
+  }
+
+  /* Water: real photo with a navy gradient foot so the white label reads. */
+  .mind__panel--water .mind__photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .mind__panel--water::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 20, 47, 0.88) 0%,
+      rgba(0, 28, 64, 0.35) 48%,
+      rgba(0, 36, 84, 0) 78%
+    );
+  }
+  .mind__panel--water .mind__label,
+  .mind__panel--water .mind__line {
+    color: var(--color-white);
+  }
+
+  /* Road: sun-yellow fill, navy ink on top (~13:1, the brand's brightest beat). */
+  .mind__panel--road {
+    background-color: var(--color-sun);
+  }
+  .mind__panel--road .mind__label {
+    color: var(--color-ink);
+  }
+  .mind__panel--road .mind__line {
+    color: #1a2e4a;
+  }
+
+  /* Speed: azure fill, white type (large only, ~4:1, fine for display). */
+  .mind__panel--speed {
+    background: radial-gradient(130% 130% at 12% 0%, #2a8af0 0%, var(--color-azure) 60%);
+  }
+  .mind__panel--speed .mind__label,
+  .mind__panel--speed .mind__line {
+    color: var(--color-white);
+  }
+
+  @media (min-width: 880px) {
+    .mind__head {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 3rem;
+    }
+    .mind__tie {
+      flex: none;
+      max-width: 28ch;
+      padding-bottom: 0.25rem;
+    }
+    .mind__grid {
+      grid-template-columns: 1.12fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+    .mind__panel--water {
+      grid-row: span 2;
+      min-height: clamp(26rem, 20rem + 14vw, 32rem);
+    }
+    .mind__panel--road,
+    .mind__panel--speed {
+      min-height: 0;
+    }
+  }
+</style>

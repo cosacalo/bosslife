@@ -1,0 +1,76 @@
+---
+// Refined venue buttons. Equal billing, all venues the same treatment.
+// Omits any venue whose url is null (no dead links). Trademark-safe: clean
+// text treatment only, no third-party logos.
+//
+// Props:
+//   venues   — unit.venues array of { name, url }
+//   label    — small label above the buttons (omit to hide)
+//   bookName — when set, "Direct" becomes "Book <bookName> direct" and external
+//              venues become "Book on <venue>". Used on detail pages.
+// The on-navy variant was cut (design-direction §3.7): no home section needs
+// venue buttons on a dark ground, so that untested surface is removed.
+const { venues = [], label = 'Book this one', bookName = null } = Astro.props;
+
+// Resolve the "Direct" anchor. On a detail page (bookName set) we need an
+// absolute path back to the home contact section, not a bare "#contact".
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+
+// Render every venue. Venues with a url are live links; venues without one
+// (GetMyBoat, RVshare pending) render as a visible "Soon" control so the
+// layout stays consistent and renters know the channel is coming.
+const items = venues.filter((v) => v && v.name);
+
+function hrefFor(v) {
+  if (v.url === '#contact') {
+    // On detail pages, bookName is set and we route to the home contact anchor.
+    return bookName ? base + '#contact' : '#contact';
+  }
+  return v.url;
+}
+
+function labelFor(v) {
+  if (v.name === 'Direct') return bookName ? `Book ${bookName} direct` : 'Book Direct';
+  return bookName ? `Book on ${v.name}` : v.name;
+}
+
+const isExternal = (v) => v.url !== '#contact';
+---
+
+{label && <p class="venues-label">{label}</p>}
+<div class="venues">
+  {
+    items.map((v) =>
+      v.url ? (
+        <a
+          class="venue-btn"
+          href={hrefFor(v)}
+          {...(isExternal(v)
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : {})}
+          aria-label={
+            isExternal(v) ? `${labelFor(v)} (opens in a new tab)` : labelFor(v)
+          }
+        >
+          <span>{labelFor(v)}</span>
+          {isExternal(v) ? (
+            <svg class="venue-btn__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4.5 11.5L11.5 4.5M11.5 4.5H5.5M11.5 4.5V10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          ) : (
+            <svg class="venue-btn__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          )}
+        </a>
+      ) : (
+        <span class="venue-btn venue-btn--soon" aria-disabled="true" title={`${v.name} listing coming soon`}>
+          <span>{v.name}</span>
+          <span class="venue-btn__soon">Soon</span>
+        </span>
+      )
+    )
+  }
+</div>

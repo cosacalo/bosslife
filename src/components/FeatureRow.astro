@@ -1,0 +1,115 @@
+---
+import { Image } from 'astro:assets';
+import VenueButtons from './VenueButtons.astro';
+
+// Editorial fleet feature row (flagship boats only). One large image
+// (alternating left/right), oversized name, one-line tagline, 3 spec chips,
+// refined venue buttons, and a "View [name]" link to the detail page. NOT a card.
+//
+// Props: unit, side ('left' | 'right')
+const { unit, side = 'left' } = Astro.props;
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const logo = base + 'logo.png';
+const detailHref = `${base}fleet/${unit.id}`;
+
+// Resolve all unit images via the eager glob, for an auto-cycling slideshow.
+const modules = import.meta.glob('../assets/units/*/*.{jpg,png}', { eager: true });
+const imageMap = {};
+for (const [path, mod] of Object.entries(modules)) {
+  const m = path.match(/units\/([^/]+)\/([^/]+)$/);
+  if (m) imageMap[`${m[1]}/${m[2]}`] = mod.default;
+}
+const slides = (unit.images || [])
+  .map((file) => imageMap[`${unit.id}/${file}`])
+  .filter(Boolean);
+const hasPhotos = slides.length > 0;
+
+const chips = (unit.chips || []).slice(0, 3);
+---
+
+<article class={`feature reveal feature--${side}`}>
+  <div class={`feature__media${hasPhotos && slides.length > 1 ? ' feature__media--show' : ''}`} data-fade-show>
+    {
+      hasPhotos ? (
+        slides.map((img, i) => (
+          <div class={`feature__slide${i === 0 ? ' is-active' : ''}`} data-fade-slide aria-hidden={i === 0 ? 'false' : 'true'}>
+            <Image
+              src={img}
+              alt={i === 0 ? `${unit.name}, ${unit.yearMakeModel}.` : ''}
+              widths={[640, 960, 1280]}
+              sizes="(min-width: 900px) 52vw, 100vw"
+              loading={i === 0 ? 'lazy' : 'lazy'}
+            />
+          </div>
+        ))
+      ) : (
+        <div class="placeholder-tile">
+          <svg class="starburst" viewBox="0 0 100 100" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M50 2l9 22 22-9-9 22 22 9-22 9 9 22-22-9-9 22-9-22-22 9 9-22-22-9 22-9-9-22 22 9z"
+            />
+          </svg>
+          <img class="placeholder-tile__logo" src={logo} alt="" width="200" height="107" />
+          <p class="placeholder-tile__name">{unit.name}</p>
+          <p class="placeholder-tile__note">Photos coming soon</p>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="feature__text">
+    <h3 class="t-editorial feature__name">{unit.name}</h3>
+    <p class="feature__day">{unit.day || unit.tagline}</p>
+    <p class="feature__model">{unit.typeLabel} · {unit.yearMakeModel}</p>
+
+    <div class="feature__chips">
+      {chips.map((c) => <span class="chip">{c}</span>)}
+    </div>
+
+    <div class="feature__venues">
+      <VenueButtons venues={unit.venues} label="" />
+    </div>
+
+    <a class="feature__view" href={detailHref}>
+      View {unit.name}
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </a>
+  </div>
+</article>
+
+<script>
+  // Auto-cycle each feature row's images. One bundled script handles every row.
+  // Honors reduced-motion, pauses on hover and when off-screen.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) {
+    document.querySelectorAll('[data-fade-show]').forEach((root) => {
+      const slides = Array.from(root.querySelectorAll('[data-fade-slide]'));
+      if (slides.length < 2) return;
+      let cur = 0;
+      let timer = null;
+      const show = (i) => {
+        cur = (i + slides.length) % slides.length;
+        slides.forEach((s, idx) => {
+          const active = idx === cur;
+          s.classList.toggle('is-active', active);
+          s.setAttribute('aria-hidden', active ? 'false' : 'true');
+        });
+      };
+      const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+      const start = () => { stop(); timer = window.setInterval(() => show(cur + 1), 4500); };
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => (e.isIntersecting ? start() : stop())),
+        { threshold: 0.25 }
+      );
+      io.observe(root);
+      root.addEventListener('pointerenter', stop);
+      root.addEventListener('pointerleave', start);
+    });
+  }
+</script>

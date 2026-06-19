@@ -1,0 +1,328 @@
+---
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const privacyHref = base + 'privacy';
+---
+
+<section class="contact section-y" id="contact">
+  <div class="container-x contact__grid">
+    <div class="contact__intro reveal">
+      <h2 class="t-h2">Ask us anything before you book</h2>
+      <p class="contact__line">
+        Tell us your day and your group and we will help you pick the right one. We would rather talk
+        it through than have you guess. We also do long-term rentals on any boat, RV, or jet ski, so
+        ask us about longer stays.
+      </p>
+
+      <ul class="contact__channels">
+        <li>
+          <span class="contact__channel-label">Phone or text</span>
+          <a href="tel:+19415002797" class="contact__channel-value">(941) 500-2797</a>
+        </li>
+        <li>
+          <span class="contact__channel-label">Email</span>
+          <a href="mailto:fun@bossliferentals.com" class="contact__channel-value">fun@bossliferentals.com</a>
+        </li>
+        <li>
+          <span class="contact__channel-label">Service area</span>
+          <span class="contact__channel-value">Sarasota, Florida</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="contact__form-wrap reveal" style="--reveal-delay: 90ms">
+      {/* SWAP: replace REPLACE_ME with the real Formspree form id before ship. */}
+      <form
+        class="form"
+        action="https://formspree.io/f/REPLACE_ME"
+        method="POST"
+        data-contact-form
+      >
+        <div class="form__row">
+          <label class="form__field">
+            <span class="form__label">Name</span>
+            <input class="form__input" type="text" name="name" autocomplete="name" required />
+          </label>
+          <label class="form__field">
+            <span class="form__label">Email</span>
+            <input
+              class="form__input"
+              type="email"
+              name="email"
+              autocomplete="email"
+              required
+              aria-describedby="email-hint"
+            />
+            <span class="form__hint" id="email-hint">We reply here. We never sell it.</span>
+          </label>
+        </div>
+
+        <div class="form__row">
+          <label class="form__field">
+            <span class="form__label">Phone <span class="form__opt">(optional)</span></span>
+            <input class="form__input" type="tel" name="phone" autocomplete="tel" />
+          </label>
+          <label class="form__field">
+            <span class="form__label">Dates <span class="form__opt">(optional)</span></span>
+            <input class="form__input" type="text" name="dates" placeholder="e.g. July 12 to 14" />
+          </label>
+        </div>
+
+        <label class="form__field">
+          <span class="form__label">Group size <span class="form__opt">(optional)</span></span>
+          <input class="form__input" type="text" name="group_size" placeholder="e.g. 6 people" />
+        </label>
+
+        <label class="form__field">
+          <span class="form__label">Message</span>
+          <textarea
+            class="form__input form__textarea"
+            name="message"
+            rows="4"
+            required
+            placeholder="Tell us your day and which unit caught your eye."></textarea>
+        </label>
+
+        <div class="form__actions">
+          <button class="btn btn-primary form__submit" type="submit">
+            Ask us anything before you book
+          </button>
+          <p class="form__privacy">
+            By sending this you agree to our
+            <a href={privacyHref}>Privacy Policy</a>.
+          </p>
+        </div>
+
+        <p class="form__status" data-form-status role="status" aria-live="polite" hidden></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  // Progressive enhancement: submit via fetch so there is no page reload and we
+  // can show an inline success state. Falls back to a normal POST without JS.
+  (function () {
+    var form = document.querySelector('[data-contact-form]');
+    if (!form) return;
+    var status = form.querySelector('[data-form-status]');
+    form.addEventListener('submit', function (e) {
+      // No live form backend yet: fall back to a pre-filled email so the form
+      // still works. Swap REPLACE_ME for a real Formspree id to use fetch instead.
+      if (form.action.indexOf('REPLACE_ME') !== -1) {
+        e.preventDefault();
+        var fd = new FormData(form);
+        var lines = [];
+        ['name', 'email', 'phone', 'dates', 'group_size', 'message'].forEach(function (k) {
+          var v = fd.get(k);
+          if (v) lines.push(k.replace('_', ' ') + ': ' + v);
+        });
+        var subject = 'Rental inquiry from ' + (fd.get('name') || 'the website');
+        window.location.href =
+          'mailto:fun@bossliferentals.com?subject=' +
+          encodeURIComponent(subject) +
+          '&body=' +
+          encodeURIComponent(lines.join('\n'));
+        if (status) {
+          status.hidden = false;
+          status.textContent =
+            'Opening your email app. Or reach us directly at fun@bossliferentals.com.';
+          status.classList.add('is-ok');
+        }
+        return;
+      }
+      e.preventDefault();
+      var data = new FormData(form);
+      var btn = form.querySelector('.form__submit');
+      if (btn) btn.disabled = true;
+      fetch(form.action, { method: 'POST', body: data, headers: { Accept: 'application/json' } })
+        .then(function (r) {
+          if (r.ok) {
+            form.reset();
+            if (status) {
+              status.hidden = false;
+              status.textContent = 'Thanks. We will get right back to you.';
+              status.classList.add('is-ok');
+            }
+          } else {
+            throw new Error('bad response');
+          }
+        })
+        .catch(function () {
+          if (status) {
+            status.hidden = false;
+            status.textContent =
+              'Something went wrong. Please email fun@bossliferentals.com or call (941) 500-2797.';
+            status.classList.add('is-err');
+          }
+        })
+        .finally(function () {
+          if (btn) btn.disabled = false;
+        });
+    });
+  })();
+</script>
+
+<style>
+  .contact {
+    background-color: var(--color-surface);
+  }
+  .contact__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+    align-items: start;
+  }
+  .contact__line {
+    margin-top: 1.25rem;
+    font-size: 1.125rem;
+    max-width: 46ch;
+  }
+  .contact__reassure {
+    margin-top: 1rem;
+    color: var(--color-slate);
+    max-width: 46ch;
+  }
+  .contact__channels {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .contact__channels li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .contact__channel-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+  }
+  .contact__channel-value {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--color-ink);
+  }
+  a.contact__channel-value:hover {
+    color: var(--color-azure);
+  }
+
+  .contact__form-wrap {
+    background-color: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: clamp(1.5rem, 1.25rem + 1.5vw, 2.5rem);
+  }
+  .form {
+    display: grid;
+    gap: 1.125rem;
+  }
+  .form__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.125rem;
+  }
+  .form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .form__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .form__opt {
+    color: var(--color-slate);
+    font-weight: 500;
+  }
+  .form__input {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-ink);
+    background-color: var(--color-surface);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 32%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.875rem;
+    transition: border-color 0.2s var(--ease-craft), box-shadow 0.2s var(--ease-craft);
+  }
+  .form__input::placeholder {
+    color: color-mix(in srgb, var(--color-slate) 75%, transparent);
+  }
+  .form__input:focus {
+    outline: none;
+    border-color: var(--color-azure);
+    box-shadow: var(--focus-ring);
+  }
+  .form__textarea {
+    resize: vertical;
+    min-height: 7rem;
+  }
+  .form__hint {
+    font-size: 0.8125rem;
+    color: var(--color-slate);
+  }
+  .form__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  .form__submit {
+    width: 100%;
+  }
+  .form__privacy {
+    font-size: 0.8125rem;
+    color: var(--color-slate);
+    text-align: center;
+  }
+  .form__privacy a {
+    color: var(--color-azure-ink);
+    text-decoration: underline;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .form__status {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+  }
+  .form__status.is-ok {
+    background-color: color-mix(in srgb, var(--color-azure) 12%, var(--color-white));
+    color: var(--color-ink);
+  }
+  .form__status.is-err {
+    background-color: color-mix(in srgb, var(--color-slate) 14%, var(--color-white));
+    color: var(--color-ink);
+  }
+
+  @media (min-width: 600px) {
+    .form__row {
+      grid-template-columns: 1fr 1fr;
+    }
+    .form__submit {
+      width: auto;
+    }
+    .form__actions {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .form__privacy {
+      text-align: right;
+    }
+  }
+  @media (min-width: 900px) {
+    .contact__grid {
+      grid-template-columns: 0.95fr 1.05fr;
+    }
+  }
+</style>

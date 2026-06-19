@@ -1,0 +1,245 @@
+---
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import Gallery from '../../components/Gallery.astro';
+import VenueButtons from '../../components/VenueButtons.astro';
+import { units } from '../../data/units.js';
+
+export function getStaticPaths() {
+  return units.map((unit) => ({
+    params: { id: unit.id },
+    props: { unit },
+  }));
+}
+
+const { unit } = Astro.props;
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const fleetHref = `${base}#fleet`;
+
+const specEntries = Object.entries(unit.specs || {});
+const hasRequirements = Array.isArray(unit.requirements) && unit.requirements.length > 0;
+const hasPricing = unit.pricing && (unit.pricing.sixHour || unit.pricing.eightHour);
+
+const title = `${unit.name} | ${unit.yearMakeModel} | Boss Life Rentals`;
+const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, fueled, and ready by a local family.`;
+---
+
+<Base path={`/fleet/${unit.id}`} title={title} description={description}>
+  <Nav onDetail={true} />
+
+  <main id="top">
+    <!-- Hero -->
+    <header class="detail-hero">
+      <div class="container-x detail-hero__inner reveal">
+        <h1 class="t-editorial">{unit.name}</h1>
+        <p class="detail-hero__model">{unit.typeLabel} · {unit.yearMakeModel}</p>
+        <div class="detail-hero__chips">
+          {unit.chips.map((c) => <span class="chip chip--dark">{c}</span>)}
+        </div>
+      </div>
+    </header>
+
+    <div class="container-x detail">
+      <!-- Gallery -->
+      <section class="detail__gallery reveal" aria-label={`${unit.name} photos`}>
+        <Gallery unit={unit} />
+      </section>
+
+      <!-- Overview -->
+      <div class="detail__cols">
+        <div class="detail__main">
+          <section class="block reveal" aria-labelledby="overview-h">
+            <h2 class="t-h2" id="overview-h">{unit.tagline}</h2>
+            <p class="block__body detail__summary">{unit.summary}</p>
+          </section>
+
+          {
+            specEntries.length > 0 && (
+              <section class="block reveal" aria-labelledby="specs-h">
+                <h2 class="t-h2" id="specs-h">Specs</h2>
+                <div class="specs">
+                  {specEntries.map(([k, v]) => (
+                    <div class="specs__row">
+                      <span class="specs__key">{k}</span>
+                      <span class="specs__val">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          }
+
+          {
+            unit.features && unit.features.length > 0 && (
+              <section class="block reveal" aria-labelledby="features-h">
+                <h2 class="t-h2" id="features-h">Features</h2>
+                <ul class="feat-list">
+                  {unit.features.map((f) => (
+                    <li>{f}</li>
+                  ))}
+                </ul>
+              </section>
+            )
+          }
+
+          {
+            unit.included && (
+              <section class="block reveal" aria-labelledby="included-h">
+                <h2 class="t-h2" id="included-h">What is included</h2>
+                <p class="block__body">{unit.included}</p>
+              </section>
+            )
+          }
+
+          {
+            unit.walkthrough && (
+              <section class="block reveal" aria-labelledby="walkthrough-h">
+                <h2 class="t-h2" id="walkthrough-h">We meet you in person</h2>
+                <p class="block__body">{unit.walkthrough}</p>
+              </section>
+            )
+          }
+
+          {
+            hasRequirements && (
+              <section class="block reveal" aria-labelledby="req-h">
+                <h2 class="t-h2" id="req-h">A few simple things to rent</h2>
+                <ul class="req-list">
+                  {unit.requirements.map((r) => (
+                    <li>
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <circle cx="10" cy="10" r="8.25" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M6.5 10.2l2.3 2.3 4.7-4.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          }
+
+          {
+            unit.operatingArea && (
+              <section class="block reveal" aria-labelledby="area-h">
+                <h2 class="t-h2" id="area-h">Operating area</h2>
+                <p class="block__body">{unit.operatingArea}</p>
+              </section>
+            )
+          }
+        </div>
+
+        <!-- Sidebar: pricing + booking -->
+        <aside class="detail__aside">
+          <div class="booking-card reveal">
+            {
+              hasPricing && (
+                <div class="booking-card__pricing">
+                  <p class="booking-card__rates-label">Rental rates</p>
+                  <div class="pricing">
+                    {unit.pricing.sixHour && (
+                      <div class="pricing__cell">
+                        <p class="pricing__label">6 hour</p>
+                        <p class="pricing__amt">${unit.pricing.sixHour}</p>
+                      </div>
+                    )}
+                    {unit.pricing.eightHour && (
+                      <div class="pricing__cell">
+                        <p class="pricing__label">8 hour</p>
+                        <p class="pricing__amt">${unit.pricing.eightHour}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            }
+            <div class="booking-card__venues">
+              <VenueButtons venues={unit.venues} label="Book this one" bookName={unit.name} />
+            </div>
+            <p class="booking-card__longterm">
+              Planning a longer stay? We do long-term rentals on this one. Book direct and tell us your dates.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <a class="back-link detail__back reveal" href={fleetHref}>
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M12.5 8H3.5M3.5 8L7.5 4M3.5 8L7.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Back to the fleet
+      </a>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<style>
+  .detail {
+    padding-top: clamp(2rem, 1.5rem + 2vw, 3rem);
+    padding-bottom: clamp(4rem, 3rem + 4vw, 7rem);
+  }
+  .detail__gallery {
+    margin-bottom: clamp(3rem, 2rem + 4vw, 5rem);
+  }
+  .detail__cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2.5rem, 2rem + 3vw, 4rem);
+    align-items: start;
+  }
+  .detail__summary {
+    margin-top: 1.25rem;
+    font-size: 1.1875rem;
+  }
+  .detail__main .block:first-child h2 {
+    max-width: 22ch;
+  }
+
+  .detail__aside {
+    position: relative;
+  }
+  .booking-card {
+    background: var(--color-surface);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 22%, transparent);
+    border-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+    box-shadow: var(--shadow-md);
+  }
+  .booking-card__pricing {
+    margin-bottom: 1.75rem;
+  }
+  .booking-card__rates-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-slate);
+  }
+  .booking-card__pricing .pricing {
+    margin-top: 1rem;
+    max-width: none;
+  }
+  .booking-card__pricing .pricing__cell {
+    background: var(--color-white);
+  }
+
+  .detail__back {
+    margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+    font-size: 1.0625rem;
+  }
+
+  @media (min-width: 960px) {
+    .detail__cols {
+      grid-template-columns: 1.55fr 0.95fr;
+      gap: clamp(3rem, 2rem + 3vw, 5rem);
+    }
+    .booking-card {
+      position: sticky;
+      top: 6rem;
+    }
+  }
+</style>

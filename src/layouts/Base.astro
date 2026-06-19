@@ -1,0 +1,146 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** path-only canonical, e.g. "/" or "/privacy" */
+  path?: string;
+}
+
+const {
+  title = 'Boss Life Rentals | Sarasota Boat, RV, and Jet Ski Rentals',
+  description = 'We love being out on the water and the open road, and we want you to leave feeling the same way. A Sarasota family sharing our boats, RVs, and jet skis. Ask us anything before you book.',
+  path = '/',
+} = Astro.props;
+
+// Base-path-aware public asset URL helper. BASE_URL is normalized to a
+// trailing slash so a future project-page deploy would not break asset links.
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const asset = (p: string) => base + p.replace(/^\//, '');
+
+const canonical = new URL(path, Astro.site).href;
+const ogImage = new URL(asset('og-image.jpg'), Astro.site).href;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: 'Boss Life Rentals',
+  description,
+  url: 'https://bossliferentals.com',
+  telephone: '+1-941-500-2797',
+  email: 'fun@bossliferentals.com',
+  image: ogImage,
+  areaServed: {
+    '@type': 'City',
+    name: 'Sarasota',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Sarasota',
+      addressRegion: 'FL',
+      addressCountry: 'US',
+    },
+  },
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Sarasota',
+    addressRegion: 'FL',
+    addressCountry: 'US',
+  },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#002454" />
+
+    <!-- Favicons (base-path-aware) -->
+    <link rel="icon" href={asset('favicon.ico')} sizes="any" />
+    <link rel="icon" type="image/png" sizes="16x16" href={asset('favicon-16.png')} />
+    <link rel="icon" type="image/png" sizes="32x32" href={asset('favicon-32.png')} />
+    <link rel="icon" type="image/png" sizes="48x48" href={asset('favicon-48.png')} />
+    <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
+    <link rel="icon" type="image/png" sizes="192x192" href={asset('icon-192.png')} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Boss Life Rentals" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content="Boss Life Rentals, Sarasota boat, RV, and jet ski rentals." />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="sitemap" href={asset('sitemap-index.xml')} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a href="#fleet" class="skip-link">Skip to the fleet</a>
+    <slot />
+
+    <!-- Motion bootstrap: only enable orchestrated motion when the user has not
+         requested reduced motion. Reduced-motion users get instant static content. -->
+    <script is:inline>
+      (function () {
+        var mq = window.matchMedia('(prefers-reduced-motion: no-preference)');
+        if (!mq.matches) return;
+        document.documentElement.setAttribute('data-motion', 'on');
+
+        // One-shot scroll reveals
+        var reveals = document.querySelectorAll('.reveal');
+        if ('IntersectionObserver' in window && reveals.length) {
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('is-visible');
+                  io.unobserve(entry.target);
+                }
+              });
+            },
+            { rootMargin: '0px 0px -10% 0px', threshold: 0.12 }
+          );
+          reveals.forEach(function (el) {
+            io.observe(el);
+          });
+        } else {
+          reveals.forEach(function (el) {
+            el.classList.add('is-visible');
+          });
+        }
+      })();
+    </script>
+
+    <style>
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+        background: var(--color-ink);
+        color: var(--color-white);
+        padding: 0.75rem 1rem;
+        border-radius: 0 0 var(--radius-md) 0;
+        font-weight: 600;
+      }
+      .skip-link:focus {
+        left: 0;
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+---
+import Base from '../layouts/Base.astro';
+import Footer from '../components/Footer.astro';
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const logo = base + 'logo.png';
+const homeHref = base;
+const year = new Date().getFullYear();
+---
+
+<Base
+  path="/privacy"
+  title="Privacy Policy | Boss Life Rentals"
+  description="How Boss Life Rentals handles the information you send through our contact form."
+>
+  {/* This page is a plain-language privacy notice. It is not legal advice. */}
+  <header class="legal-nav">
+    <div class="container-x legal-nav__inner">
+      <a href={homeHref} aria-label="Boss Life Rentals, home">
+        <img src={logo} alt="Boss Life Rentals" width="160" height="85" />
+      </a>
+      <a href={homeHref} class="legal-nav__back">Back to home</a>
+    </div>
+  </header>
+
+  <main class="legal section-y">
+    <div class="container-x legal__inner">
+      <p class="t-eyebrow legal__eyebrow">Legal</p>
+      <h1 class="t-h1">Privacy Policy</h1>
+      <p class="legal__meta">Last updated {year}.</p>
+
+      <div class="legal__body">
+        <p>
+          Boss Life Rentals LLC is a small family rental business in Sarasota, Florida. This page
+          explains, in plain language, what happens to the information you send us through the
+          contact form on this site.
+        </p>
+
+        <h2 class="t-h3">What we collect</h2>
+        <p>
+          When you use our contact form, you choose what to send. The form asks for your name,
+          your email address, and a message. It also has optional fields for your phone number,
+          your dates, and your group size. We only receive what you type in.
+        </p>
+
+        <h2 class="t-h3">How it reaches us</h2>
+        <p>
+          The form is handled by Formspree, a third party form service. When you submit the form,
+          Formspree passes your message along to us by email so we can reply. Your information
+          travels through Formspree only to deliver your message to us.
+        </p>
+
+        <h2 class="t-h3">How we use it</h2>
+        <p>
+          We use what you send to answer your question, help you pick a unit, and arrange a
+          booking. That is all. We do not sell or share your information, and we do not use it for
+          advertising.
+        </p>
+
+        <h2 class="t-h3">How long we keep it</h2>
+        <p>
+          We keep your message as long as we need it to help you and to keep a record of our
+          conversation. You can ask us to delete it at any time.
+        </p>
+
+        <h2 class="t-h3">Your choices</h2>
+        <p>
+          If you want us to delete the information you sent, or you have any question about your
+          privacy, email us at
+          <a href="mailto:fun@bossliferentals.com">fun@bossliferentals.com</a>
+          or call or text
+          <a href="tel:+19415002797">(941) 500-2797</a>. We will take care of it.
+        </p>
+
+        <h2 class="t-h3">Children</h2>
+        <p>
+          This site is meant for adults arranging a rental. It is not directed at children, and we
+          do not knowingly collect information from children.
+        </p>
+
+        <h2 class="t-h3">Changes</h2>
+        <p>
+          If we change how we handle your information, we will update this page. This notice is
+          written to be clear and honest. It is not legal advice.
+        </p>
+
+        <p class="legal__contact">
+          Boss Life Rentals LLC, Sarasota, Florida.
+          <a href="mailto:fun@bossliferentals.com">fun@bossliferentals.com</a> ·
+          <a href="tel:+19415002797">(941) 500-2797</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<style>
+  .legal-nav {
+    background-color: var(--color-ink);
+  }
+  .legal-nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 0.75rem;
+  }
+  .legal-nav__inner img {
+    height: 44px;
+    width: auto;
+  }
+  .legal-nav__back {
+    color: var(--color-white);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .legal-nav__back:hover {
+    color: var(--color-sun);
+  }
+  .legal {
+    background-color: var(--color-surface);
+  }
+  .legal__inner {
+    max-width: 720px;
+  }
+  .legal__eyebrow {
+    color: var(--color-azure);
+    margin-bottom: 0.75rem;
+  }
+  .legal__meta {
+    margin-top: 0.75rem;
+    color: var(--color-slate);
+    font-size: 0.9375rem;
+  }
+  .legal__body {
+    margin-top: 2.5rem;
+    display: grid;
+    gap: 1rem;
+  }
+  .legal__body h2 {
+    margin-top: 1.5rem;
+    color: var(--color-ink);
+  }
+  .legal__body a {
+    color: var(--color-azure);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .legal__contact {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-slate) 25%, transparent);
+    color: var(--color-slate);
+    font-size: 0.9375rem;
+  }
+</style>

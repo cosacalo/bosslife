@@ -1,0 +1,31 @@
+# build output
+dist/
+# generated types
+.astro/
+# dependencies
+node_modules/
+# logs
+npm-debug.log*
+# environment
+.env
+.env.production
+# macOS
+.DS_Store
+
+# --- not part of the deployable site (kept local only) ---
+# redesign backups and throwaway mockups
+.backups/
+.redesign-mockups/
+# local dev-server config
+.claude/
+# leftover staging dirs (real assets live in src/assets + public/)
+/assets/
+/components/
+# internal planning / strategy docs (not needed to build the site)
+DESIGN-DIRECTION.md
+QUALITY-BAR.md
+REDESIGN-BRIEF.md
+SPEC.md
+design-system.md
+copy.md
+inventory.md

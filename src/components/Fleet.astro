@@ -1,0 +1,234 @@
+---
+import { unitsByCategory, categories } from '../data/units.js';
+import UnitCard from './UnitCard.astro';
+import VenueButtons from './VenueButtons.astro';
+
+// The fleet, equal billing across all three categories, sold by the day each
+// gives you. Three distinct layout families keep it from reading as one card
+// grid:
+//   Boats   — two tall photo feature cards (the real photography).
+//   RVs     — two horizontal compact cards.
+//   Jet skis — one bold azure color-block panel holding both SeaDoos. Direct
+//             only, but presented as a confident feature, not a demoted tail.
+const boats = unitsByCategory('boat');
+const rvs = unitsByCategory('rv');
+const jetskis = unitsByCategory('jetski');
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const detailHref = (id) => `${base}fleet/${id}`;
+
+const catBlurb = (key) => categories.find((c) => c.key === key)?.blurb ?? '';
+const jetskiVenues = jetskis[0]?.venues ?? [{ name: 'Direct', url: '#contact' }];
+---
+
+<section class="fleet section-y" id="fleet">
+  <div class="container-x">
+    <header class="fleet__head reveal">
+      <h2 class="t-h1 fleet__title">Pick your day.</h2>
+      <p class="fleet__lead">
+        Boats, RVs, and jet skis, all ours, all kept ready. Pick the one that fits the day you want,
+        and book where you are most comfortable. Staying a while? We do long-term rentals on any of
+        them. Just ask.
+      </p>
+    </header>
+
+    <!-- Boats: tall photo feature cards -->
+    <div class="fleet__group">
+      <header class="fleet__group-head reveal">
+        <h3 class="t-h2 fleet__group-title">Boats</h3>
+        <p class="fleet__group-blurb">{catBlurb('boat')}</p>
+      </header>
+      <div class="fleet__feature-grid">
+        {boats.map((unit) => <UnitCard unit={unit} variant="feature" />)}
+      </div>
+    </div>
+
+    <!-- RVs: horizontal compact cards -->
+    <div class="fleet__group">
+      <header class="fleet__group-head reveal">
+        <h3 class="t-h2 fleet__group-title">RVs</h3>
+        <p class="fleet__group-blurb">{catBlurb('rv')}</p>
+      </header>
+      <div class="fleet__compact-grid">
+        {rvs.map((unit) => <UnitCard unit={unit} variant="compact" />)}
+      </div>
+    </div>
+
+    <!-- Jet skis: bold azure color-block panel, both SeaDoos -->
+    <div class="fleet__group">
+      <div class="jetski-panel reveal">
+        <div class="jetski-panel__intro">
+          <h3 class="t-h2 jetski-panel__title">Jet Skis</h3>
+          <p class="jetski-panel__blurb">{catBlurb('jetski')}</p>
+          <div class="jetski-panel__venues">
+            <VenueButtons venues={jetskiVenues} label="" />
+          </div>
+        </div>
+        <ul class="jetski-panel__list">
+          {
+            jetskis.map((unit) => (
+              <li class="jetski-panel__item">
+                <a href={detailHref(unit.id)} class="jetski-panel__link">
+                  <span class="jetski-panel__name">{unit.name}</span>
+                  <span class="jetski-panel__meta">{unit.chips.join(' · ')}</span>
+                  <span class="jetski-panel__view">
+                    View
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .fleet {
+    background-color: var(--color-surface);
+  }
+  .fleet__head {
+    max-width: 52rem;
+    margin-bottom: clamp(3rem, 2rem + 4vw, 5rem);
+  }
+  .fleet__lead {
+    margin-top: 1.25rem;
+    font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+    color: var(--color-slate);
+    max-width: 52ch;
+  }
+  .fleet__group + .fleet__group {
+    margin-top: clamp(3.5rem, 2.5rem + 4vw, 6rem);
+  }
+  .fleet__group-head {
+    max-width: 52rem;
+    margin-bottom: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
+    padding-bottom: 1.125rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-slate) 22%, transparent);
+  }
+  .fleet__group-title {
+    color: var(--color-ink);
+  }
+  .fleet__group-blurb {
+    margin-top: 0.75rem;
+    color: var(--color-slate);
+    font-size: 1.0625rem;
+    max-width: 54ch;
+  }
+
+  .fleet__feature-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+  }
+  .fleet__compact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.25rem, 1rem + 1.5vw, 1.75rem);
+  }
+  @media (min-width: 860px) {
+    .fleet__feature-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (min-width: 1000px) {
+    .fleet__compact-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Jet ski color-block panel: confident azure feature, equal weight to the
+     photo cards above through scale and the bold fill. */
+  .jetski-panel {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: radial-gradient(120% 140% at 100% 0%, #2a8af0 0%, var(--color-azure) 55%, #0b66c4 100%);
+    color: var(--color-white);
+    box-shadow: var(--shadow-md);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
+    padding: clamp(1.75rem, 1.4rem + 2vw, 3rem);
+  }
+  .jetski-panel__title {
+    color: var(--color-white);
+  }
+  .jetski-panel__blurb {
+    margin-top: 0.75rem;
+    color: var(--color-white);
+    font-size: 1.0625rem;
+    max-width: 36ch;
+  }
+  .jetski-panel__venues {
+    margin-top: 1.5rem;
+  }
+  .jetski-panel__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.875rem;
+    align-content: start;
+  }
+  /* Navy-tinted rows so white meta text clears AA on the azure ground. */
+  .jetski-panel__link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem 1rem;
+    flex-wrap: wrap;
+    padding: 1.125rem 1.25rem;
+    border-radius: var(--radius-lg);
+    background: rgba(0, 22, 52, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    transition: background-color 0.25s var(--ease-craft), transform 0.25s var(--ease-craft);
+  }
+  .jetski-panel__link:hover,
+  .jetski-panel__link:focus-visible {
+    background: rgba(0, 22, 52, 0.4);
+    transform: translateY(-2px);
+  }
+  .jetski-panel__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1875rem;
+    color: var(--color-white);
+  }
+  .jetski-panel__meta {
+    font-size: 0.9375rem;
+    color: var(--color-white);
+    text-transform: capitalize;
+  }
+  .jetski-panel__view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: auto;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--color-sun);
+  }
+  .jetski-panel__view svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+  @media (min-width: 760px) {
+    .jetski-panel {
+      grid-template-columns: 0.9fr 1.1fr;
+      align-items: start;
+      gap: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .jetski-panel__link:hover {
+      transform: none;
+    }
+  }
+</style>

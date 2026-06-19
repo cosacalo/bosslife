@@ -1,0 +1,183 @@
+---
+// Hero: full-viewport video background under a navy scrim, bottom-anchored
+// editorial headline. Reduced-motion and mobile users get the poster image
+// (no autoplay video on cellular). The locked two-sentence headline IS the
+// design here (manifesto hero); the closing phrase carries a sun-yellow mark.
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const asset = (p: string) => base + p.replace(/^\//, '');
+---
+
+<section class="hero" id="top">
+  <div class="hero__media" aria-hidden="true">
+    <video
+      class="hero__video"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="none"
+      poster={asset('hero-poster.jpg')}
+      data-hero-video
+    >
+      <source src={asset('hero-loop.mp4')} type="video/mp4" />
+    </video>
+    <div class="hero__scrim"></div>
+  </div>
+
+  <div class="container-x hero__content">
+    <p class="hero__eyebrow rise" style="--rise-delay: 60ms">
+      <span class="hero__dot" aria-hidden="true"></span>
+      <span class="t-eyebrow">Sarasota, Florida</span>
+    </p>
+    <h1 class="hero__title rise" style="--rise-delay: 140ms">
+      We love being out on the water and the open road. We want you to leave
+      <span class="hero__mark">feeling the same way.</span>
+    </h1>
+    <p class="hero__sub rise" style="--rise-delay: 240ms">
+      We are Carlos and Liza, a Sarasota family. Our boats, RVs, and jet skis are kept clean, fueled,
+      and ready. Ask us anything before you book.
+    </p>
+    <div class="hero__actions rise" style="--rise-delay: 320ms">
+      <a href="#fleet" class="btn btn-primary">See the fleet</a>
+      <a href="#contact" class="hero__link">Talk to us</a>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  // Lazy-init the hero video only when motion is allowed and the viewport is
+  // wide enough; otherwise the poster stands alone (no cellular autoplay).
+  (function () {
+    var v = document.querySelector('[data-hero-video]');
+    if (!v) return;
+    var allowMotion = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+    var wideEnough = window.matchMedia('(min-width: 768px)').matches;
+    if (allowMotion && wideEnough) {
+      v.preload = 'auto';
+      var tryPlay = function () {
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      };
+      if (v.readyState >= 2) tryPlay();
+      else v.addEventListener('loadeddata', tryPlay, { once: true });
+    } else {
+      v.removeAttribute('autoplay');
+    }
+  })();
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 92svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background-color: var(--color-ink);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+  .hero__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* Deeper scrim at the foot where the type lives, lighter up top so the water
+     reads. Slight warm-navy vignette keeps the white type crisp at any frame. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to top,
+        rgba(0, 20, 47, 0.92) 0%,
+        rgba(0, 28, 64, 0.62) 40%,
+        rgba(0, 36, 84, 0.15) 100%
+      );
+  }
+  .hero__content {
+    position: relative;
+    padding-block: clamp(2.5rem, 1.5rem + 7vw, 5.5rem);
+    width: 100%;
+  }
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--color-sun);
+    margin-bottom: 1.5rem;
+  }
+  .hero__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-sun);
+    flex: none;
+  }
+  .hero__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.25rem, 1.55rem + 2.9vw, 3.85rem);
+    line-height: 1.04;
+    letter-spacing: -0.022em;
+    color: var(--color-white);
+    max-width: 19ch;
+    text-wrap: balance;
+  }
+  /* Sun-yellow brush mark behind the closing phrase. Drawn as a low band so the
+     white text stays crisp on top; the energy comes from the brand color, not a
+     glow. Decorative only, so it tucks behind the glyphs. */
+  /* Sun-yellow highlighter behind the closing phrase: navy ink on sun (~13:1),
+     the brand's brightest, most legible pairing. box-decoration-break keeps the
+     band clean if it ever wraps. */
+  .hero__mark {
+    white-space: nowrap;
+    color: var(--color-ink);
+    background: var(--color-sun);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding: 0.02em 0.16em;
+    border-radius: 4px;
+  }
+  .hero__sub {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+    line-height: 1.5;
+    max-width: 44ch;
+    margin-top: 1.5rem;
+  }
+  .hero__actions {
+    margin-top: 2.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.75rem;
+  }
+  .hero__link {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--color-white);
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.45);
+    padding-bottom: 3px;
+    transition: border-color 0.25s var(--ease-craft), color 0.25s var(--ease-craft);
+  }
+  .hero__link:hover {
+    color: var(--color-sun);
+    border-color: var(--color-sun);
+  }
+
+  /* The closing phrase only stays on one line where there is room. Below the
+     desktop measure, let it wrap so the mark never clips the viewport edge. */
+  @media (max-width: 560px) {
+    .hero__mark {
+      white-space: normal;
+    }
+  }
+</style>

@@ -1,0 +1,872 @@
+@import 'tailwindcss';
+
+/* Self-hosted variable fonts (OFL). Neither is a banned default. */
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/hanken-grotesk';
+
+/* ===========================================================================
+   Design tokens (design-system.md, exact values)
+   Palette is exactly 5 brand hex + #FFFFFF as a raised surface.
+   =========================================================================== */
+@theme {
+  /* Palette */
+  --color-ink: #002454;
+  --color-surface: #f2f8fe;
+  --color-azure: #0c78e4;
+  /* Accessible azure for small text on light backgrounds (WCAG AA >= 4.5:1).
+     Same hue as --color-azure, darkened. Bright azure stays for fills, borders,
+     dark-section accents, and large/decorative use. */
+  --color-azure-ink: #0a63c4;
+  --color-sun: #fcd80c;
+  --color-slate: #5b708a;
+  --color-white: #ffffff;
+
+  /* Fonts */
+  --font-display: 'Bricolage Grotesque Variable', sans-serif;
+  --font-body: 'Hanken Grotesk Variable', sans-serif;
+
+  /* Override Tailwind v4's default font stacks so no system-ui/ui-sans-serif
+     defaults ship anywhere. Brand fonts only. */
+  --default-font-family: 'Hanken Grotesk Variable', sans-serif;
+  --font-sans: 'Hanken Grotesk Variable', sans-serif;
+
+  /* Spacing scale (4px base) */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-24: 96px;
+  --spacing-32: 128px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Navy-tinted soft shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 36, 84, 0.06);
+  --shadow-md: 0 1px 2px rgba(0, 36, 84, 0.06), 0 8px 24px rgba(0, 36, 84, 0.08);
+  --shadow-lg: 0 2px 4px rgba(0, 36, 84, 0.08), 0 16px 40px rgba(0, 36, 84, 0.12);
+
+  /* Motion */
+  --ease-craft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+:root {
+  --focus-ring: 0 0 0 3px rgba(12, 120, 228, 0.45);
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  margin: 0;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Reusable type roles (clamps from design-system.md) */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3.5rem, 2.6rem + 4.5vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+.t-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 2.1rem + 2vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+.t-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.875rem, 1.6rem + 1.4vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.t-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  line-height: 1.15;
+}
+
+.t-small {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-slate);
+}
+
+.t-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Layout helpers */
+.container-x {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 0.5rem + 3vw, 2.5rem);
+}
+
+.section-y {
+  padding-block: clamp(4rem, 3rem + 6vw, 8rem);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-craft),
+    box-shadow 0.2s var(--ease-craft),
+    background-color 0.2s var(--ease-craft),
+    border-color 0.2s var(--ease-craft),
+    color 0.2s var(--ease-craft);
+}
+
+/* Primary CTA: sun fill + ink text (never on white as text; the fill provides contrast) */
+.btn-primary {
+  background-color: var(--color-sun);
+  color: var(--color-ink);
+}
+.btn-primary:hover {
+  filter: brightness(0.96);
+}
+
+/* Secondary: azure outline on light surfaces */
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--color-azure-ink);
+  border-color: color-mix(in srgb, var(--color-azure) 35%, transparent);
+}
+.btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--color-azure) 8%, var(--color-white));
+  border-color: var(--color-azure);
+}
+
+/* Solid azure (for dark sections, white text large/bold only) */
+.btn-azure {
+  background-color: var(--color-azure);
+  color: var(--color-white);
+}
+.btn-azure:hover {
+  filter: brightness(1.06);
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* Spec chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-slate);
+  padding: 0.3125rem 0.625rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-slate) 28%, transparent);
+  background-color: color-mix(in srgb, var(--color-surface) 60%, var(--color-white));
+}
+
+/* ===========================================================================
+   Motion: orchestrated, restrained, gated on prefers-reduced-motion
+   =========================================================================== */
+
+/* Scroll reveal: default static (reduced-motion safe). JS opts in to animation. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Only animate when JS marks the document as motion-enabled */
+  [data-motion='on'] .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.6s var(--ease-craft),
+      transform 0.6s var(--ease-craft);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  [data-motion='on'] .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Hero load beat */
+  [data-motion='on'] .rise {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: rise-in 0.6s var(--ease-craft) forwards;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+}
+
+@keyframes rise-in {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===========================================================================
+   Editorial system (Coastal Editorial, v2)
+   =========================================================================== */
+
+/* Oversized editorial display, tighter than t-display, used on feature names
+   and detail heroes. Type carries the design. */
+.t-editorial {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.75rem, 2rem + 4.2vw, 5.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+
+/* Starburst signature motif. Inline SVG colors via currentColor so it reads
+   azure on light, sun on navy. Used sparingly: section markers + promise stamp. */
+.starburst {
+  display: inline-block;
+  vertical-align: middle;
+  flex: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion='on'] .starburst--spin {
+    animation: starburst-spin 28s linear infinite;
+    transform-origin: center;
+  }
+}
+@keyframes starburst-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Section marker: starburst + eyebrow label, the recurring editorial device. */
+.marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.marker .starburst {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* ---- Venue buttons (refined, equal billing, never plain pills) ---- */
+.venues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.venue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  padding: 0.75rem 1.0625rem;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+  background-color: transparent;
+  color: var(--color-ink);
+  transition:
+    background-color 0.28s var(--ease-craft),
+    border-color 0.28s var(--ease-craft),
+    color 0.28s var(--ease-craft),
+    box-shadow 0.28s var(--ease-craft),
+    transform 0.28s var(--ease-craft);
+}
+.venue-btn__arrow {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  opacity: 0.55;
+  transition: transform 0.28s var(--ease-craft), opacity 0.28s var(--ease-craft);
+}
+.venue-btn:hover,
+.venue-btn:focus-visible {
+  background-color: var(--color-azure);
+  border-color: var(--color-azure);
+  color: var(--color-white);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.venue-btn:hover .venue-btn__arrow,
+.venue-btn:focus-visible .venue-btn__arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+/* "Soon" state: a venue whose listing is not live yet (GetMyBoat, RVshare).
+   Visible and same footprint as a real button, but muted and non-interactive. */
+.venue-btn--soon {
+  cursor: default;
+  color: var(--color-slate);
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--color-slate) 40%, transparent);
+}
+.venue-btn__soon {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.125rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-slate) 18%, transparent);
+  color: var(--color-slate);
+}
+
+/* Small label above venue buttons. */
+.venues-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+  margin-bottom: 0.75rem;
+}
+
+/* ---- Editorial feature row (the fleet, NOT a card grid) ---- */
+.feature {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.5rem, 1rem + 3vw, 3.5rem);
+  align-items: center;
+}
+.feature__media {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background-color: var(--color-ink);
+  box-shadow: var(--shadow-md);
+  aspect-ratio: 4 / 3;
+}
+.feature__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s var(--ease-craft);
+}
+.feature:hover .feature__media img {
+  transform: scale(1.03);
+}
+/* Auto-cycling crossfade slides inside a feature row. */
+.feature__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-craft);
+}
+.feature__slide.is-active {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature__slide {
+    transition: none;
+  }
+}
+.feature__name {
+  margin-bottom: 0.75rem;
+}
+.feature__tagline {
+  font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+  color: var(--color-ink);
+  max-width: 36ch;
+}
+.feature__day {
+  font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--color-ink);
+  max-width: 42ch;
+}
+.feature__model {
+  margin-top: 0.5rem;
+  color: var(--color-slate);
+  font-size: 0.9375rem;
+}
+.feature__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+.feature__venues {
+  margin-top: 1.5rem;
+}
+.feature__view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin-top: 1.75rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--color-ink);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-azure) 35%, transparent);
+  padding-bottom: 2px;
+  transition: border-color 0.25s var(--ease-craft), gap 0.25s var(--ease-craft);
+}
+.feature__view svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-azure);
+  transition: transform 0.25s var(--ease-craft);
+}
+.feature__view:hover,
+.feature__view:focus-visible {
+  border-color: var(--color-azure);
+  gap: 0.6875rem;
+}
+.feature__view:hover svg,
+.feature__view:focus-visible svg {
+  transform: translateX(3px);
+}
+
+/* Alternate image side on wide screens for editorial rhythm. */
+@media (min-width: 900px) {
+  .feature {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: clamp(3rem, 1rem + 4vw, 5.5rem);
+  }
+  .feature--right .feature__media {
+    order: 2;
+  }
+}
+
+/* On-brand placeholder tile for units without photos. */
+.placeholder-tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  text-align: center;
+  padding: 2rem;
+  background:
+    radial-gradient(120% 100% at 50% 0%, #0a3a78 0%, var(--color-ink) 70%);
+  color: var(--color-white);
+}
+.placeholder-tile__logo {
+  width: clamp(120px, 30%, 200px);
+  height: auto;
+  opacity: 0.95;
+}
+.placeholder-tile__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--color-white);
+}
+.placeholder-tile__note {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.placeholder-tile .starburst {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-sun);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  opacity: 0.85;
+}
+/* Compact placeholder for the unit-card grid family (no corner ornament). */
+.placeholder-tile--compact {
+  gap: 0.5rem;
+  padding: 1.25rem;
+}
+.placeholder-tile--compact .placeholder-tile__logo {
+  width: clamp(96px, 36%, 150px);
+}
+.placeholder-tile--compact .placeholder-tile__name {
+  font-size: 1.125rem;
+}
+
+/* ---- Animated gallery ---- */
+.gallery {
+  position: relative;
+}
+.gallery__stage {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background-color: var(--color-ink);
+  box-shadow: var(--shadow-md);
+  aspect-ratio: 16 / 10;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.gallery__stage:active {
+  cursor: grabbing;
+}
+.gallery__track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s var(--ease-craft);
+  will-change: transform;
+}
+.gallery__slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+}
+.gallery__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gallery__track {
+    transition: none;
+  }
+}
+.gallery__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--color-white);
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-craft), transform 0.25s var(--ease-craft);
+  z-index: 2;
+}
+.gallery__nav:hover {
+  background: var(--color-azure);
+}
+.gallery__nav svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.gallery__nav--prev {
+  left: 0.875rem;
+}
+.gallery__nav--next {
+  right: 0.875rem;
+}
+.gallery__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.125rem;
+  margin-top: 0.5rem;
+}
+.gallery__dot {
+  box-sizing: content-box;
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: color-mix(in srgb, var(--color-slate) 45%, transparent);
+  background-clip: content-box;
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-craft), width 0.25s var(--ease-craft);
+}
+.gallery__dot.is-active {
+  background: var(--color-azure);
+  width: 1.5rem;
+}
+.gallery__count {
+  position: absolute;
+  bottom: 0.875rem;
+  right: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  backdrop-filter: blur(6px);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill);
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Detail page editorial bits ---- */
+.detail-hero {
+  position: relative;
+  background-color: var(--color-ink);
+  color: var(--color-white);
+  overflow: hidden;
+  isolation: isolate;
+}
+.detail-hero__inner {
+  padding-top: clamp(7rem, 5rem + 8vw, 11rem);
+  padding-bottom: clamp(2.5rem, 2rem + 3vw, 4rem);
+}
+.detail-hero h1 {
+  color: var(--color-white);
+}
+.detail-hero__model {
+  margin-top: 0.875rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1.0625rem;
+}
+.detail-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+}
+.chip--dark {
+  color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Editorial specs table */
+.specs {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid color-mix(in srgb, var(--color-slate) 28%, transparent);
+}
+.specs__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.9375rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-slate) 22%, transparent);
+}
+.specs__key {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-slate);
+}
+.specs__val {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--color-ink);
+  text-align: right;
+}
+@media (min-width: 720px) {
+  .specs {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 3.5rem;
+  }
+}
+
+/* Feature list (detail) */
+.feat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .feat-list {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 2rem;
+  }
+}
+.feat-list li {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  font-size: 1.0625rem;
+}
+.feat-list li::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-azure);
+}
+
+/* Pricing block (boats) */
+.pricing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  max-width: 26rem;
+}
+.pricing__cell {
+  background: var(--color-white);
+  border: 1px solid color-mix(in srgb, var(--color-slate) 22%, transparent);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.375rem;
+}
+.pricing__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+.pricing__amt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1;
+  margin-top: 0.5rem;
+  color: var(--color-ink);
+}
+.pricing__amt span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-slate);
+}
+
+/* Generic detail section block */
+.block + .block {
+  margin-top: clamp(2.5rem, 2rem + 3vw, 4rem);
+}
+.block__body {
+  font-size: 1.0625rem;
+  max-width: 60ch;
+}
+.req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.875rem;
+  max-width: 62ch;
+}
+.req-list li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.req-list li svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.1875rem;
+  color: var(--color-azure);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-azure-ink);
+  transition: gap 0.25s var(--ease-craft);
+}
+.back-link svg {
+  width: 1rem;
+  height: 1rem;
+}
+.back-link:hover {
+  gap: 0.75rem;
+}
+
+/* Mobile tap comfort: grow secondary text links and contact values toward a
+   comfortable target size at phone widths without altering the desktop editorial
+   look. Primary venue buttons already have min-height 44px globally. */
+@media (max-width: 640px) {
+  .feature__view,
+  .hero__link {
+    padding-block: 0.5rem;
+  }
+  .contact__channel-value {
+    padding-block: 0.6rem;
+  }
+}
+
+/* Long-term rental note inside the detail booking card. */
+.booking-card__longterm {
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-slate);
+}

@@ -1,0 +1,114 @@
+---
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const logo = base + 'logo.png';
+const privacyHref = base + 'privacy';
+const homeHref = base; // root
+const year = new Date().getFullYear(); // rendered at build time (static)
+
+const links = [
+  { href: '#about', label: 'Our story' },
+  { href: '#fleet', label: 'Fleet' },
+  { href: '#why', label: 'How it works' },
+  { href: '#contact', label: 'Contact' },
+];
+---
+
+<footer class="footer">
+  <div class="container-x footer__top">
+    <div class="footer__brand">
+      <a href={homeHref} aria-label="Boss Life Rentals, home">
+        <img src={logo} alt="Boss Life Rentals" width="180" height="96" />
+      </a>
+      <p class="footer__tag">Sarasota, Florida. The life we live, yours for a day.</p>
+    </div>
+
+    <nav class="footer__nav" aria-label="Footer">
+      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    </nav>
+
+    <div class="footer__contact">
+      <a href="tel:+19415002797">(941) 500-2797</a>
+      <a href="mailto:fun@bossliferentals.com">fun@bossliferentals.com</a>
+      <span>Sarasota, Florida</span>
+    </div>
+  </div>
+
+  <div class="container-x footer__legal">
+    <p>Boss Life Rentals LLC &middot; {year}</p>
+    <a href={privacyHref}>Privacy Policy</a>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background-color: var(--color-ink);
+    color: rgba(255, 255, 255, 0.85);
+    padding-block: clamp(3rem, 2.5rem + 2vw, 4.5rem) 1.5rem;
+  }
+  .footer__top {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .footer__brand img {
+    height: 56px;
+    width: auto;
+  }
+  .footer__tag {
+    margin-top: 0.875rem;
+    font-size: 0.9375rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 32ch;
+  }
+  .footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-content: start;
+  }
+  .footer__nav a {
+    color: var(--color-white);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .footer__nav a:hover {
+    color: var(--color-sun);
+  }
+  .footer__contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+  }
+  .footer__contact a:hover {
+    color: var(--color-sun);
+  }
+  .footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .footer__legal a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .footer__legal a:hover {
+    color: var(--color-sun);
+  }
+  @media (min-width: 768px) {
+    .footer__top {
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 3rem;
+    }
+  }
+</style>

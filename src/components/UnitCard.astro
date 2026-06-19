@@ -1,0 +1,274 @@
+---
+import { Image } from 'astro:assets';
+import VenueButtons from './VenueButtons.astro';
+
+// Fleet card, two variants so the fleet reads as distinct layout families:
+//   'feature' — tall photo card with an auto-cycling slideshow (boats).
+//   'compact' — horizontal card, media beside the text (RVs).
+// Data-driven from units.js. Units without photos render the on-brand placeholder.
+//
+// Props: unit, variant ('feature' | 'compact')
+const { unit, variant = 'feature' } = Astro.props;
+
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const logo = base + 'logo.png';
+const detailHref = `${base}fleet/${unit.id}`;
+
+const modules = import.meta.glob('../assets/units/*/*.{jpg,png}', { eager: true });
+const imageMap = {};
+for (const [path, mod] of Object.entries(modules)) {
+  const m = path.match(/units\/([^/]+)\/([^/]+)$/);
+  if (m) imageMap[`${m[1]}/${m[2]}`] = mod.default;
+}
+const slides = (unit.images || [])
+  .map((file) => imageMap[`${unit.id}/${file}`])
+  .filter(Boolean);
+const hasPhotos = slides.length > 0;
+const cycle = variant === 'feature' && slides.length > 1;
+const chips = (unit.chips || []).slice(0, 3);
+---
+
+<article class={`unit-card unit-card--${variant} reveal`}>
+  <div class={`unit-card__media${cycle ? ' is-cycling' : ''}`} data-fade-show={cycle ? '' : null}>
+    {
+      hasPhotos ? (
+        cycle ? (
+          slides.map((img, i) => (
+            <div
+              class={`unit-card__slide${i === 0 ? ' is-active' : ''}`}
+              data-fade-slide
+              aria-hidden={i === 0 ? 'false' : 'true'}
+            >
+              <Image
+                src={img}
+                alt={i === 0 ? `${unit.name}, ${unit.yearMakeModel}.` : ''}
+                widths={[480, 720, 1040]}
+                sizes={variant === 'feature' ? '(min-width: 860px) 46vw, 100vw' : '(min-width: 760px) 28vw, 100vw'}
+                loading="lazy"
+              />
+            </div>
+          ))
+        ) : (
+          <Image
+            src={slides[0]}
+            alt={`${unit.name}, ${unit.yearMakeModel}.`}
+            widths={[400, 600, 800]}
+            sizes={variant === 'feature' ? '(min-width: 860px) 46vw, 100vw' : '(min-width: 760px) 28vw, 100vw'}
+            loading="lazy"
+          />
+        )
+      ) : (
+        <div class="placeholder-tile placeholder-tile--compact">
+          <img class="placeholder-tile__logo" src={logo} alt="" width="160" height="86" />
+          <p class="placeholder-tile__note">Photos coming soon</p>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="unit-card__body">
+    <h4 class="unit-card__name">{unit.name}</h4>
+    <p class="unit-card__day">{unit.day || unit.tagline}</p>
+    <p class="unit-card__model">{unit.typeLabel} · {unit.yearMakeModel}</p>
+
+    {
+      chips.length > 0 && (
+        <div class="unit-card__chips">
+          {chips.map((c) => <span class="chip">{c}</span>)}
+        </div>
+      )
+    }
+
+    <div class="unit-card__venues">
+      <VenueButtons venues={unit.venues} label="" />
+    </div>
+
+    <a class="unit-card__view" href={detailHref}>
+      View {unit.name}
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3.5 8H12.5M12.5 8L8.5 4M12.5 8L8.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </a>
+  </div>
+</article>
+
+<script>
+  // Auto-cycle the feature cards' photos. One bundled script handles every card.
+  // Honors reduced-motion, pauses on hover and when off-screen.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) {
+    document.querySelectorAll('[data-fade-show]').forEach((root) => {
+      const slides = Array.from(root.querySelectorAll('[data-fade-slide]'));
+      if (slides.length < 2) return;
+      let cur = 0;
+      let timer = null;
+      const show = (i) => {
+        cur = (i + slides.length) % slides.length;
+        slides.forEach((s, idx) => {
+          const active = idx === cur;
+          s.classList.toggle('is-active', active);
+          s.setAttribute('aria-hidden', active ? 'false' : 'true');
+        });
+      };
+      const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+      const start = () => { stop(); timer = window.setInterval(() => show(cur + 1), 4500); };
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => (e.isIntersecting ? start() : stop())),
+        { threshold: 0.25 }
+      );
+      io.observe(root);
+      root.addEventListener('pointerenter', stop);
+      root.addEventListener('pointerleave', start);
+    });
+  }
+</script>
+
+<style>
+  .unit-card {
+    background-color: var(--color-white);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 16%, transparent);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition:
+      box-shadow 0.3s var(--ease-craft),
+      transform 0.3s var(--ease-craft);
+  }
+  .unit-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+  }
+
+  .unit-card__media {
+    position: relative;
+    background-color: var(--color-ink);
+    overflow: hidden;
+  }
+  .unit-card__media > img,
+  .unit-card__slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s var(--ease-craft);
+  }
+  .unit-card:hover .unit-card__media > img,
+  .unit-card:hover .unit-card__slide img {
+    transform: scale(1.03);
+  }
+  .unit-card__slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.9s var(--ease-craft);
+  }
+  .unit-card__slide.is-active {
+    opacity: 1;
+  }
+  .unit-card__media.is-cycling {
+    /* establish a containing box for absolutely-positioned slides */
+  }
+
+  .unit-card__body {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.375rem, 1.15rem + 1vw, 1.875rem);
+  }
+  .unit-card__name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+  .unit-card__day {
+    margin-top: 0.625rem;
+    color: var(--color-ink);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+  .unit-card__model {
+    margin-top: 0.625rem;
+    color: var(--color-slate);
+    font-size: 0.9375rem;
+  }
+  .unit-card__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.125rem 0 0;
+  }
+  .unit-card__venues {
+    margin-top: 1.25rem;
+  }
+  .unit-card__view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    margin-top: 1.25rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.0625rem;
+    color: var(--color-ink);
+    border-bottom: 2px solid color-mix(in srgb, var(--color-azure) 35%, transparent);
+    padding-bottom: 2px;
+    align-self: flex-start;
+    transition: border-color 0.25s var(--ease-craft), gap 0.25s var(--ease-craft);
+  }
+  .unit-card__view svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-azure);
+    transition: transform 0.25s var(--ease-craft);
+  }
+  .unit-card__view:hover,
+  .unit-card__view:focus-visible {
+    border-color: var(--color-azure);
+    gap: 0.6875rem;
+  }
+  .unit-card__view:hover svg {
+    transform: translateX(3px);
+  }
+
+  /* Feature variant: tall photo card (boats). */
+  .unit-card--feature {
+    display: flex;
+    flex-direction: column;
+  }
+  .unit-card--feature .unit-card__media {
+    aspect-ratio: 3 / 2;
+  }
+
+  /* Compact variant: horizontal, media beside the text (RVs). */
+  .unit-card--compact .unit-card__media {
+    aspect-ratio: 16 / 10;
+  }
+  @media (min-width: 560px) {
+    .unit-card--compact {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      align-items: stretch;
+    }
+    .unit-card--compact .unit-card__media {
+      aspect-ratio: auto;
+      height: 100%;
+      min-height: 15rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .unit-card,
+    .unit-card__media img,
+    .unit-card__slide {
+      transition: none;
+    }
+    .unit-card:hover {
+      transform: none;
+    }
+    .unit-card:hover .unit-card__media img {
+      transform: none;
+    }
+  }
+</style>
