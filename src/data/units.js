@@ -121,6 +121,9 @@ export const units = [
     typeLabel: 'Travel trailer',
     yearMakeModel: '2021 Coachmen Apex Nano 208BHS',
     tagline: 'Pull up, unpack, and live it.',
+    // Optional rotating-trailer hero accent (AI studio clip) behind the detail hero.
+    heroVideo: 'apex-rotate.mp4',
+    heroPoster: 'apex-rotate-poster.jpg',
     day: 'Pack up and go. A light, easy trailer with a bunkhouse for the kids, set up and ready so you just unpack and start the trip.',
     summary:
       'Pack up and go. This is our 2021 Coachmen Apex Nano 208BHS, a light, easy to tow travel trailer with a queen up front, bunks in back for the kids, and the Off-Grid Package so you can set up somewhere quiet and stay a while. We can have it ready at your site so you just unpack and start the trip.',
