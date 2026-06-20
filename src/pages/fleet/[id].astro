@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
@@ -24,6 +25,18 @@ const fleetHref = `${base}#fleet`;
 const specEntries = Object.entries(unit.specs || {});
 const hasRequirements = Array.isArray(unit.requirements) && unit.requirements.length > 0;
 const hasPricing = unit.pricing && (unit.pricing.sixHour || unit.pricing.eightHour);
+
+// Resolve an optional floor-plan image (line diagram) for this unit.
+const fpModules = import.meta.glob('../../assets/units/*/*.{jpg,png}', { eager: true });
+let floorplanImg = null;
+if (unit.floorplan) {
+  for (const [path, mod] of Object.entries(fpModules)) {
+    if (path.endsWith(`/${unit.id}/${unit.floorplan}`)) {
+      floorplanImg = mod.default;
+      break;
+    }
+  }
+}
 
 const title = `${unit.name} | ${unit.yearMakeModel} | Boss Life Rentals`;
 const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, fueled, and ready by a local family.`;
@@ -122,6 +135,23 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
                     <li>{f}</li>
                   ))}
                 </ul>
+              </section>
+            )
+          }
+
+          {
+            floorplanImg && (
+              <section class="block reveal" aria-labelledby="floorplan-h">
+                <h2 class="t-h2" id="floorplan-h">Floor plan</h2>
+                <figure class="floorplan">
+                  <Image
+                    src={floorplanImg}
+                    alt={`Floor plan of the ${unit.name}.`}
+                    widths={[600, 900, 1235]}
+                    sizes="(min-width: 960px) 60vw, 100vw"
+                    loading="lazy"
+                  />
+                </figure>
               </section>
             )
           }
@@ -369,6 +399,21 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
     .detail-hero__video {
       /* poster frame only, no motion */
     }
+  }
+
+  /* Floor plan: line diagram on white, in a clean card on the light page. */
+  .floorplan {
+    margin: 1.25rem 0 0;
+    background: var(--color-white);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 20%, transparent);
+    border-radius: var(--radius-lg);
+    padding: clamp(1rem, 0.75rem + 1.5vw, 1.75rem);
+    box-shadow: var(--shadow-sm);
+  }
+  .floorplan img {
+    width: 100%;
+    height: auto;
+    display: block;
   }
 
   .detail__back {

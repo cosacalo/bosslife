@@ -174,6 +174,7 @@ export const units = [
     requirements: [],
     pricing: null,
     operatingArea: 'Sarasota, Florida and the surrounding area. Ask us about delivery and setup at your campsite.',
+    floorplan: 'apex-floorplan.jpg', // 208 BHS floor plan (from the Coachmen brochure)
     images: [
       'apex-nano-01.jpg', 'apex-nano-02.jpg', 'apex-nano-03.jpg', 'apex-nano-04.jpg',
       'apex-nano-05.jpg', 'apex-nano-06.jpg', 'apex-nano-07.jpg', 'apex-nano-08.jpg',
