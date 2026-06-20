@@ -68,6 +68,9 @@ export const units = [
     typeLabel: 'Dual console',
     yearMakeModel: '2021 Robalo R227 Dual Console',
     tagline: 'Built for the day that turns into anything.',
+    // Optional rotating-boat hero accent (AI studio clip) behind the detail hero.
+    heroVideo: 'marco-rotate.mp4',
+    heroPoster: 'marco-rotate-poster.jpg',
     day: 'The day that turns into anything: a morning cruise, a swim stop, a fishing run, a sunset to close. The range and the ride for all of it.',
     summary:
       'The day that turns into anything: a morning cruise, a swim stop, a fishing run, a sunset to close. This is our 2021 Robalo R227 dual console, with the range and the ride for all of it, kept clean and ready.',
