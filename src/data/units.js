@@ -22,6 +22,9 @@ export const units = [
     typeLabel: 'Deck boat',
     yearMakeModel: '2023 Starcraft SVX 191 OB',
     tagline: 'Room to spread out for the whole group.',
+    // Optional rotating-boat hero accent (AI studio clip) behind the detail hero.
+    heroVideo: 'stella-rotate.mp4',
+    heroPoster: 'stella-rotate-poster.jpg',
     day: 'Room for the whole crew to spread out, shade when you want it, a steady ride, and a spot for everyone from the kids to the grandparents.',
     summary:
       'Room for the whole crew to spread out, shade when you want it, a steady ride, and a spot for everyone from the kids to the grandparents. This is our 2023 Starcraft deck boat, kept clean and ready for a Sarasota day that is entirely yours.',
