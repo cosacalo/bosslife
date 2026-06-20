@@ -58,6 +58,26 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
           </section>
 
           {
+            unit.highlight && (
+              <section class="block reveal highlightcard" aria-labelledby="highlight-h">
+                <h2 class="t-h2 highlightcard__title" id="highlight-h">{unit.highlight.title}</h2>
+                <p class="highlightcard__body">{unit.highlight.body}</p>
+                <ul class="highlightcard__list">
+                  {unit.highlight.points.map((p) => (
+                    <li>
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <circle cx="10" cy="10" r="8.25" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M6.5 10.2l2.3 2.3 4.7-4.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          }
+
+          {
             specEntries.length > 0 && (
               <section class="block reveal" aria-labelledby="specs-h">
                 <h2 class="t-h2" id="specs-h">Specs</h2>
@@ -225,6 +245,49 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
   }
   .booking-card__pricing .pricing__cell {
     background: var(--color-white);
+  }
+
+  /* Off-grid / standout highlight: one navy callout card on the light detail
+     page, sun-accented checklist. Renders only when a unit defines `highlight`. */
+  .highlightcard {
+    background:
+      radial-gradient(120% 130% at 100% 0%, #0a3a78 0%, var(--color-ink) 60%);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 1.25rem + 1.5vw, 2.5rem);
+    box-shadow: var(--shadow-md);
+  }
+  .highlightcard__title {
+    color: var(--color-white);
+    max-width: 20ch;
+  }
+  .highlightcard__body {
+    margin-top: 0.875rem;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.86);
+    max-width: 54ch;
+  }
+  .highlightcard__list {
+    list-style: none;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .highlightcard__list li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+  .highlightcard__list li svg {
+    flex: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-top: 0.15rem;
+    color: var(--color-sun);
   }
 
   .detail__back {

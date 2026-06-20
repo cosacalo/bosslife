@@ -117,15 +117,59 @@ export const units = [
     yearMakeModel: '2021 Coachmen Apex Nano 208BHS',
     tagline: 'Pull up, unpack, and live it.',
     day: 'Pack up and go. A light, easy trailer with a bunkhouse for the kids, set up and ready so you just unpack and start the trip.',
-    summary: 'Pack up and go. A light, easy to tow 2021 Coachmen Apex Nano travel trailer with a bunkhouse for the kids, set up and ready so you just unpack and start the trip.',
-    chips: ['bunkhouse', 'travel trailer'],
-    specs: { Make: 'Coachmen Apex Nano', Model: '208BHS', Year: '2021', Layout: 'Bunkhouse' }, // TODO Carlos: sleeps, length, dry weight
-    features: ['Bunkhouse sleeping', 'Kitchen and dinette', 'Set up ready at your site'],
-    included: 'We can have it set up and ready so you go in and just unpack.',
+    summary:
+      'Pack up and go. This is our 2021 Coachmen Apex Nano 208BHS, a light, easy to tow travel trailer with a queen up front, bunks in back for the kids, and the Off-Grid Package so you can set up somewhere quiet and stay a while. We can have it ready at your site so you just unpack and start the trip.',
+    chips: ['off-grid solar', 'bunkhouse', '25 ft', 'outside kitchen'],
+    // Specs verified from the 2021 Apex Nano brochure (208 BHS column + callouts).
+    specs: {
+      Make: 'Coachmen Apex Nano',
+      Model: '208BHS',
+      Year: '2021',
+      Beds: 'Queen up front, double bunks in back',
+      Length: '25 ft',
+      'Interior height': '6 ft 5 in',
+      'Dry weight': '4,260 lbs',
+      GVWR: '6,000 lbs',
+      'Fresh water': '50 gal',
+      Awning: '14 ft',
+    },
+    // The Off-Grid Package is the standout, so it gets the highlight block on the
+    // detail page rather than being buried in the features list.
+    highlight: {
+      title: 'Made to camp off the grid',
+      body: 'This one came with the Apex Off-Grid Package, so you can pull off somewhere quiet and stay a while without needing a hookup.',
+      points: [
+        '100 watt solar panel with a 10 amp charge controller, keeping the battery topped up',
+        'Two 20 lb LP tanks with a cover, for longer trips between fills',
+        'High velocity 10 inch power roof vent, three speeds and quiet',
+        '12 volt outlets at the pass-through storage and the outside kitchen',
+      ],
+    },
+    features: [
+      'Front 60 by 80 queen bed',
+      'Rear double bunks, with the lower bunk flipping up for storage',
+      'Large booth dinette for meals and card games',
+      'Outside camp kitchen with a cooktop and refrigerator',
+      '6 cubic foot gas and electric refrigerator',
+      'Microwave and a two-burner cooktop',
+      'Full bathroom with tub surround and a skylight',
+      '13,500 BTU air conditioning and a direct-vent furnace',
+      'Power awning with LED lighting',
+      'Heated and enclosed underbelly for cooler nights',
+      'Hot and cold outside shower',
+      'Bluetooth stereo with outside speakers',
+    ],
+    included:
+      'We can have it set up and ready at your site so you just unpack and start the trip. It comes clean, with the systems checked and the battery charged.',
+    walkthrough:
+      'We meet you to hand it over, walk you through the trailer, the hookups, and how everything works, and we are a call away for the rest of the trip.',
     requirements: [],
     pricing: null,
-    operatingArea: 'Sarasota, Florida and the surrounding area.',
-    images: [], // TODO Carlos: real Apex Nano photos
+    operatingArea: 'Sarasota, Florida and the surrounding area. Ask us about delivery and setup at your campsite.',
+    images: [
+      'apex-nano-01.jpg', 'apex-nano-02.jpg', 'apex-nano-03.jpg', 'apex-nano-04.jpg',
+      'apex-nano-05.jpg', 'apex-nano-06.jpg', 'apex-nano-07.jpg', 'apex-nano-08.jpg',
+    ],
     venues: [
       { name: 'RVshare', url: null },   // TODO Carlos: RVshare listing URL
       { name: 'Direct', url: '#contact' },
