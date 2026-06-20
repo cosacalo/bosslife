@@ -52,7 +52,9 @@ export const units = [
     ],
     pricing: { sixHour: 430, eightHour: 530 },
     operatingArea: 'Home base is Centennial Park in Sarasota, included. Other pickup points available, ask when you book.',
-    images: ['stella-01.jpg', 'stella-02.jpg', 'stella-03.jpg', 'stella-04.jpg'],
+    // 01-04 are real Stella shots. 05-06 are SVX cockpit/deck detail shots
+    // (note: SVX 211 sibling, 768x576, used as supplementary detail views).
+    images: ['stella-01.jpg', 'stella-02.jpg', 'stella-03.jpg', 'stella-04.jpg', 'stella-05.jpg', 'stella-06.jpg'],
     venues: [
       { name: 'Boatsetter', url: 'https://www.boatsetter.com/boats/gbxppnq' },
       { name: 'GetMyBoat', url: null },   // TODO Carlos: GetMyBoat listing URL
