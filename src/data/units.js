@@ -191,16 +191,37 @@ export const units = [
     typeLabel: 'Travel trailer',
     yearMakeModel: '2023 Forest River Flagstaff Super Lite 27BHWS',
     tagline: 'Room for the whole family, wherever the road goes.',
+    // Optional rotating-trailer hero accent (AI studio clip) behind the detail hero.
+    heroVideo: 'flagstaff-rotate.mp4',
+    heroPoster: 'flagstaff-rotate-poster.jpg',
     day: 'Room for the whole family on the long trip: two slides, a dedicated bunk room, and space to spread out.',
-    summary: 'Room for the whole family on the long trip. A roomy 2023 Forest River Flagstaff Super Lite with two slides, a dedicated bunk room, and space to spread out.',
-    chips: ['sleeps 7', '32 ft 10 in', '2 slides', 'bunk room'],
+    summary:
+      'Room for the whole family on the long trip. This is our 2023 Forest River Flagstaff Super Lite 27BHWS, with two slides that open it right up, a dedicated bunk room for the kids, a private front bedroom, and space for everyone to spread out. We can have it set up and ready so you just unpack and start the trip.',
+    chips: ['sleeps 7', '2 slides', 'bunk room', '32 ft'],
     specs: { Make: 'Forest River Flagstaff Super Lite', Model: '27BHWS', Year: '2023', Length: '32 ft 10 in', Sleeps: '7', Slides: '2', 'Dry weight': '7,310 lbs' },
-    features: ['Two slide outs', 'Dedicated bunk room', 'Full kitchen and dinette', 'Sleeps 7'],
-    included: 'We can have it set up and ready so you go in and just unpack.',
+    features: [
+      'Two slide-outs that open up the living space',
+      'Dedicated rear bunk room for the kids',
+      'Private front bedroom with a queen bed',
+      'Theater-style reclining sofa',
+      'U-shaped dinette for meals and games',
+      'Full kitchen with a stainless refrigerator, gas range, and microwave',
+      'Electric fireplace and TV entertainment center',
+      'Two entry doors',
+      'Power awning',
+    ],
+    included:
+      'We can have it set up and ready at your site so you just unpack and start the trip. It comes clean, with the systems checked.',
+    walkthrough:
+      'We meet you to hand it over, walk you through the trailer, the hookups, and how everything works, and we are a call away for the rest of the trip.',
     requirements: [],
     pricing: null,
-    operatingArea: 'Sarasota, Florida and the surrounding area.',
-    images: [], // TODO Carlos: real Flagstaff photos
+    operatingArea: 'Sarasota, Florida and the surrounding area. Ask us about delivery and setup at your campsite.',
+    floorplan: 'flagstaff-floorplan.jpg', // 27BHWS floor plan
+    images: [
+      'flagstaff-01.jpg', 'flagstaff-02.jpg', 'flagstaff-03.jpg', 'flagstaff-04.jpg',
+      'flagstaff-05.jpg', 'flagstaff-06.jpg', 'flagstaff-07.jpg',
+    ],
     venues: [
       { name: 'RVshare', url: null },   // TODO Carlos: RVshare listing URL
       { name: 'Direct', url: '#contact' },
