@@ -6,12 +6,17 @@ interface Props {
   description?: string;
   /** path-only canonical, e.g. "/" or "/privacy" */
   path?: string;
+  /** share image filename in public/, defaults to the site-wide one */
+  ogImage?: string;
+  ogAlt?: string;
 }
 
 const {
   title = 'Boss Life Rentals | Sarasota Boat, RV, and Jet Ski Rentals',
   description = 'We love being out on the water and the open road, and we want you to leave feeling the same way. A Sarasota family sharing our boats, RVs, and jet skis. Ask us anything before you book.',
   path = '/',
+  ogImage = 'og-image.jpg',
+  ogAlt = 'Boss Life Rentals, Sarasota boat, RV, and jet ski rentals.',
 } = Astro.props;
 
 // Base-path-aware public asset URL helper. BASE_URL is normalized to a
@@ -22,7 +27,7 @@ const base = import.meta.env.BASE_URL.endsWith('/')
 const asset = (p: string) => base + p.replace(/^\//, '');
 
 const canonical = new URL(path, Astro.site).href;
-const ogImage = new URL(asset('og-image.jpg'), Astro.site).href;
+const ogImageUrl = new URL(asset(ogImage), Astro.site).href;
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -32,7 +37,7 @@ const jsonLd = {
   url: 'https://bossliferentals.com',
   telephone: '+1-941-500-2797',
   email: 'fun@bossliferentals.com',
-  image: ogImage,
+  image: ogImageUrl,
   areaServed: {
     '@type': 'City',
     name: 'Sarasota',
@@ -76,14 +81,14 @@ const jsonLd = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:image:alt" content="Boss Life Rentals, Sarasota boat, RV, and jet ski rentals." />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content={ogAlt} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image" content={ogImageUrl} />
 
     <link rel="sitemap" href={asset('sitemap-index.xml')} />
 
