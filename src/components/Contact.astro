@@ -3,6 +3,9 @@ const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : import.meta.env.BASE_URL + '/';
 const privacyHref = base + 'privacy';
+
+// What are you interested in? Adapted from the sibling site's "Interest" select.
+const interests = ['Boats', 'RVs', 'Jet skis', 'A mix of things', 'Not sure yet'];
 ---
 
 <section class="contact section-y" id="contact">
@@ -32,55 +35,86 @@ const privacyHref = base + 'privacy';
     </div>
 
     <div class="contact__form-wrap reveal" style="--reveal-delay: 90ms">
-      {/* SWAP: replace REPLACE_ME with the real Formspree form id before ship. */}
       <form
         class="form"
-        action="https://formspree.io/f/REPLACE_ME"
+        action="https://formspree.io/f/mjgqkpnn"
         method="POST"
         data-contact-form
+        novalidate
       >
-        <div class="form__row">
-          <label class="form__field">
-            <span class="form__label">Name</span>
-            <input class="form__input" type="text" name="name" autocomplete="name" required />
+        {/* Honeypot: bots fill it, humans never see it. Formspree drops these. */}
+        <div class="form__hp" aria-hidden="true">
+          <label>Leave this field empty
+            <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" />
           </label>
-          <label class="form__field">
-            <span class="form__label">Email</span>
+        </div>
+
+        <div class="form__row">
+          <label class="form__field" data-field="name">
+            <span class="form__label">Name <span class="form__tag form__tag--req">Required</span></span>
+            <input
+              class="form__input"
+              type="text"
+              name="name"
+              autocomplete="name"
+              required
+              aria-describedby="err-name"
+            />
+            <span class="form__error" id="err-name" role="alert"></span>
+          </label>
+          <label class="form__field" data-field="interest">
+            <span class="form__label">What are you interested in? <span class="form__tag">Optional</span></span>
+            <select class="form__input form__select" name="interest">
+              <option value="">Pick one</option>
+              {interests.map((i) => <option value={i}>{i}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <p class="form__pairnote">Leave a phone or an email so we can reach you. Either is fine.</p>
+        <div class="form__row">
+          <label class="form__field" data-field="phone">
+            <span class="form__label">Phone <span class="form__tag form__tag--one">One of these</span></span>
+            <input
+              class="form__input"
+              type="tel"
+              name="phone"
+              autocomplete="tel"
+              inputmode="tel"
+              aria-describedby="err-phone"
+            />
+            <span class="form__error" id="err-phone" role="alert"></span>
+          </label>
+          <label class="form__field" data-field="email">
+            <span class="form__label">Email <span class="form__tag form__tag--one">One of these</span></span>
             <input
               class="form__input"
               type="email"
               name="email"
               autocomplete="email"
-              required
-              aria-describedby="email-hint"
+              aria-describedby="err-email"
             />
-            <span class="form__hint" id="email-hint">We reply here. We never sell it.</span>
+            <span class="form__error" id="err-email" role="alert"></span>
           </label>
         </div>
 
         <div class="form__row">
-          <label class="form__field">
-            <span class="form__label">Phone <span class="form__opt">(optional)</span></span>
-            <input class="form__input" type="tel" name="phone" autocomplete="tel" />
-          </label>
-          <label class="form__field">
-            <span class="form__label">Dates <span class="form__opt">(optional)</span></span>
+          <label class="form__field" data-field="dates">
+            <span class="form__label">Dates <span class="form__tag">Optional</span></span>
             <input class="form__input" type="text" name="dates" placeholder="e.g. July 12 to 14" />
+          </label>
+          <label class="form__field" data-field="group_size">
+            <span class="form__label">Group size <span class="form__tag">Optional</span></span>
+            <input class="form__input" type="text" name="group_size" placeholder="e.g. 6 people" />
           </label>
         </div>
 
-        <label class="form__field">
-          <span class="form__label">Group size <span class="form__opt">(optional)</span></span>
-          <input class="form__input" type="text" name="group_size" placeholder="e.g. 6 people" />
-        </label>
-
-        <label class="form__field">
-          <span class="form__label">Message</span>
+        <label class="form__field" data-field="message">
+          <span class="form__label">Message <span class="form__tag">Optional</span></span>
           <textarea
             class="form__input form__textarea"
             name="message"
             rows="4"
-            required
             placeholder="Tell us your day and which unit caught your eye."></textarea>
         </label>
 
@@ -96,69 +130,171 @@ const privacyHref = base + 'privacy';
 
         <p class="form__status" data-form-status role="status" aria-live="polite" hidden></p>
       </form>
+
+      {/* Success panel: replaces the form on a confirmed send. */}
+      <div class="form-success" data-form-success hidden role="status" tabindex="-1">
+        <span class="form-success__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <h3 class="form-success__title">Request sent</h3>
+        <p class="form-success__msg">
+          Thanks, we got it. We will get back to you soon. Need us right away? Call or text
+          <a href="tel:+19415002797">(941) 500-2797</a>.
+        </p>
+      </div>
     </div>
   </div>
 </section>
 
 <script is:inline>
-  // Progressive enhancement: submit via fetch so there is no page reload and we
-  // can show an inline success state. Falls back to a normal POST without JS.
+  // Contact form: progressive enhancement. Without JS it is a real POST to
+  // Formspree. With JS it adds inline validation, phone formatting, a spam
+  // honeypot + timing trap, and an in-place success panel.
   (function () {
     var form = document.querySelector('[data-contact-form]');
     if (!form) return;
     var status = form.querySelector('[data-form-status]');
+    var successPanel = document.querySelector('[data-form-success]');
+    var submitBtn = form.querySelector('.form__submit');
+    var startTime = Date.now();
+
+    function field(name) { return form.querySelector('[data-field="' + name + '"]'); }
+    function input(name) { return form.querySelector('[name="' + name + '"]'); }
+    function focusable(name) {
+      var f = field(name);
+      return f ? f.querySelector('input, select, textarea') : null;
+    }
+
+    function setError(name, msg) {
+      var f = field(name);
+      var i = input(name);
+      var e = form.querySelector('#err-' + name);
+      if (!f) return;
+      if (msg) {
+        f.classList.add('is-invalid');
+        f.classList.remove('is-valid');
+        if (i) i.setAttribute('aria-invalid', 'true');
+        if (e) e.textContent = msg;
+      } else {
+        f.classList.remove('is-invalid');
+        if (i) i.removeAttribute('aria-invalid');
+        if (e) e.textContent = '';
+      }
+    }
+    function setValid(name, ok) {
+      var f = field(name);
+      if (f) f.classList.toggle('is-valid', !!ok);
+    }
+
+    function phoneDigits(v) {
+      var d = (v || '').replace(/\D/g, '');
+      if (d.length === 11 && d.charAt(0) === '1') d = d.slice(1);
+      return d.slice(0, 10);
+    }
+    function formatPhone(v) {
+      var d = phoneDigits(v);
+      if (d.length >= 7) return '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6);
+      if (d.length >= 4) return '(' + d.slice(0, 3) + ') ' + d.slice(3);
+      if (d.length > 0) return '(' + d;
+      return '';
+    }
+    function isEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+    function nameError() { return input('name').value.trim() ? '' : 'Let us know your name.'; }
+    function emailError() {
+      var v = input('email').value.trim();
+      if (!v) return '';
+      return isEmail(v) ? '' : 'That email looks off. Mind checking it?';
+    }
+    function phoneError() {
+      var v = input('phone').value.trim();
+      if (!v) return '';
+      return phoneDigits(v).length >= 10 ? '' : 'That number looks short. Add the area code and number.';
+    }
+    function bothEmpty() {
+      return !input('phone').value.trim() && !input('email').value.trim();
+    }
+
+    // Blur: validate and mark good or flag with a reason.
+    focusable('name').addEventListener('blur', function () {
+      var m = nameError(); setError('name', m); setValid('name', !m && input('name').value.trim());
+    });
+    focusable('email').addEventListener('blur', function () {
+      var m = emailError(); setError('email', m); setValid('email', !m && isEmail(input('email').value.trim()));
+    });
+    focusable('phone').addEventListener('blur', function () {
+      if (input('phone').value.trim()) input('phone').value = formatPhone(input('phone').value);
+      var m = phoneError(); setError('phone', m); setValid('phone', !m && phoneDigits(input('phone').value).length >= 10);
+    });
+
+    // Typing: clear an existing error the moment it is fixed; never nag mid-type.
+    function clearOnFix(name, fn) {
+      var f = field(name);
+      if (f && f.classList.contains('is-invalid') && !fn()) setError(name, '');
+    }
+    focusable('name').addEventListener('input', function () { clearOnFix('name', nameError); });
+    focusable('email').addEventListener('input', function () { clearOnFix('email', emailError); });
+    focusable('phone').addEventListener('input', function () {
+      input('phone').value = formatPhone(input('phone').value);
+      clearOnFix('phone', phoneError);
+    });
+
+    function showSuccess() {
+      form.hidden = true;
+      if (!successPanel) return;
+      successPanel.hidden = false;
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      successPanel.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      successPanel.focus();
+    }
+
     form.addEventListener('submit', function (e) {
-      // No live form backend yet: fall back to a pre-filled email so the form
-      // still works. Swap REPLACE_ME for a real Formspree id to use fetch instead.
-      if (form.action.indexOf('REPLACE_ME') !== -1) {
+      // Spam guards. Both fail silently so a bot gets no signal.
+      if (input('_gotcha') && input('_gotcha').value) { e.preventDefault(); return; }
+      if (Date.now() - startTime < 1500) {
         e.preventDefault();
-        var fd = new FormData(form);
-        var lines = [];
-        ['name', 'email', 'phone', 'dates', 'group_size', 'message'].forEach(function (k) {
-          var v = fd.get(k);
-          if (v) lines.push(k.replace('_', ' ') + ': ' + v);
-        });
-        var subject = 'Rental inquiry from ' + (fd.get('name') || 'the website');
-        window.location.href =
-          'mailto:fun@bossliferentals.com?subject=' +
-          encodeURIComponent(subject) +
-          '&body=' +
-          encodeURIComponent(lines.join('\n'));
-        if (status) {
-          status.hidden = false;
-          status.textContent =
-            'Opening your email app. Or reach us directly at fun@bossliferentals.com.';
-          status.classList.add('is-ok');
-        }
+        if (status) { status.hidden = false; status.className = 'form__status is-err'; status.textContent = 'One moment, then send again.'; }
         return;
       }
+
+      // Validate. Order matters for "focus the first problem".
+      var problems = [];
+      var nm = nameError(); setError('name', nm); if (nm) problems.push('name');
+      if (input('phone').value.trim()) input('phone').value = formatPhone(input('phone').value);
+      var ph = phoneError(); if (ph) { setError('phone', ph); problems.push('phone'); }
+      var em = emailError(); if (em) { setError('email', em); problems.push('email'); }
+      if (bothEmpty()) {
+        setError('phone', 'Leave a phone or an email so we can reach you.');
+        setError('email', 'Leave a phone or an email so we can reach you.');
+        if (problems.indexOf('phone') < 0) problems.push('phone');
+        if (problems.indexOf('email') < 0) problems.push('email');
+      }
+
+      if (problems.length) {
+        e.preventDefault();
+        if (status) { status.hidden = false; status.className = 'form__status is-err'; status.textContent = 'Please check the highlighted fields.'; }
+        var first = focusable(problems[0]); if (first) first.focus();
+        return;
+      }
+
+      // Valid. Submit via fetch so we can show the success panel in place.
       e.preventDefault();
-      var data = new FormData(form);
-      var btn = form.querySelector('.form__submit');
-      if (btn) btn.disabled = true;
-      fetch(form.action, { method: 'POST', body: data, headers: { Accept: 'application/json' } })
+      if (status) status.hidden = true;
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.dataset.label = submitBtn.textContent; submitBtn.textContent = 'Sending...'; }
+      fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } })
         .then(function (r) {
-          if (r.ok) {
-            form.reset();
-            if (status) {
-              status.hidden = false;
-              status.textContent = 'Thanks. We will get right back to you.';
-              status.classList.add('is-ok');
-            }
-          } else {
-            throw new Error('bad response');
-          }
+          if (r.ok) { showSuccess(); }
+          else { throw new Error('bad response'); }
         })
         .catch(function () {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.label || 'Send'; }
           if (status) {
             status.hidden = false;
-            status.textContent =
-              'Something went wrong. Please email fun@bossliferentals.com or call (941) 500-2797.';
-            status.classList.add('is-err');
+            status.className = 'form__status is-err';
+            status.textContent = 'Something went wrong. Please call (941) 500-2797 or email fun@bossliferentals.com.';
           }
-        })
-        .finally(function () {
-          if (btn) btn.disabled = false;
         });
     });
   })();
@@ -177,11 +313,6 @@ const privacyHref = base + 'privacy';
   .contact__line {
     margin-top: 1.25rem;
     font-size: 1.125rem;
-    max-width: 46ch;
-  }
-  .contact__reassure {
-    margin-top: 1rem;
-    color: var(--color-slate);
     max-width: 46ch;
   }
   .contact__channels {
@@ -223,6 +354,9 @@ const privacyHref = base + 'privacy';
     display: grid;
     gap: 1.125rem;
   }
+  .form[hidden] {
+    display: none;
+  }
   .form__row {
     display: grid;
     grid-template-columns: 1fr;
@@ -237,10 +371,26 @@ const privacyHref = base + 'privacy';
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-ink);
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
   }
-  .form__opt {
+  .form__tag {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--color-slate);
-    font-weight: 500;
+  }
+  .form__tag--req,
+  .form__tag--one {
+    color: var(--color-azure-ink);
+  }
+  .form__pairnote {
+    font-size: 0.875rem;
+    color: var(--color-slate);
+    margin-top: 0.25rem;
+    margin-bottom: -0.25rem;
   }
   .form__input {
     font-family: var(--font-body);
@@ -250,7 +400,8 @@ const privacyHref = base + 'privacy';
     border: 1px solid color-mix(in srgb, var(--color-slate) 32%, transparent);
     border-radius: var(--radius-sm);
     padding: 0.75rem 0.875rem;
-    transition: border-color 0.2s var(--ease-craft), box-shadow 0.2s var(--ease-craft);
+    transition: border-color 0.2s var(--ease-craft), box-shadow 0.2s var(--ease-craft),
+      background-position 0.2s var(--ease-craft);
   }
   .form__input::placeholder {
     color: color-mix(in srgb, var(--color-slate) 75%, transparent);
@@ -260,10 +411,56 @@ const privacyHref = base + 'privacy';
     border-color: var(--color-azure);
     box-shadow: var(--focus-ring);
   }
+  .form__select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B708A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
   .form__textarea {
     resize: vertical;
     min-height: 7rem;
   }
+
+  /* Validation states. Valid gets a green ring + check; invalid a red ring and a
+     written reason below. Both pass WCAG AA on the white card. */
+  .form__field.is-valid .form__input:not(.form__select):not(.form__textarea) {
+    border-color: #0a7d4f;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a7d4f' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.05rem;
+    padding-right: 2.5rem;
+  }
+  .form__field.is-invalid .form__input {
+    border-color: #c0392b;
+  }
+  .form__field.is-invalid .form__input:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, #c0392b 22%, transparent);
+  }
+  .form__error {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: #b42318;
+    font-weight: 500;
+  }
+  .form__error:empty {
+    display: none;
+  }
+
+  /* Honeypot: off-screen, kept out of the tab order and the a11y tree. */
+  .form__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
   .form__hint {
     font-size: 0.8125rem;
     color: var(--color-slate);
@@ -277,6 +474,10 @@ const privacyHref = base + 'privacy';
   .form__submit {
     width: 100%;
   }
+  .form__submit[disabled] {
+    opacity: 0.7;
+    cursor: progress;
+  }
   .form__privacy {
     font-size: 0.8125rem;
     color: var(--color-slate);
@@ -286,7 +487,6 @@ const privacyHref = base + 'privacy';
     color: var(--color-azure-ink);
     text-decoration: underline;
     font-weight: 600;
-    text-decoration: underline;
     text-underline-offset: 2px;
   }
   .form__status {
@@ -300,8 +500,47 @@ const privacyHref = base + 'privacy';
     color: var(--color-ink);
   }
   .form__status.is-err {
-    background-color: color-mix(in srgb, var(--color-slate) 14%, var(--color-white));
+    background-color: color-mix(in srgb, #c0392b 12%, var(--color-white));
+    color: #8a2018;
+  }
+
+  /* Success panel: replaces the form, focus lands here, scrolled into view. */
+  .form-success {
+    text-align: center;
+    padding: clamp(2rem, 1.5rem + 2vw, 3.25rem) 1rem;
+    outline: none;
+  }
+  .form-success__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-sun);
     color: var(--color-ink);
+  }
+  .form-success__icon svg {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+  .form-success__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    color: var(--color-ink);
+    margin-top: 1.125rem;
+  }
+  .form-success__msg {
+    margin: 0.75rem auto 0;
+    max-width: 38ch;
+    color: var(--color-ink);
+    line-height: 1.5;
+  }
+  .form-success__msg a {
+    color: var(--color-azure-ink);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
   @media (min-width: 600px) {
