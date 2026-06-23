@@ -377,6 +377,45 @@ video {
   opacity: 1;
   transform: translate(2px, -2px);
 }
+/* Book Direct is the primary path: sun fill, navy-ink text (the brand's
+   brightest ~13:1 pairing). It leads on a light card and pops on the azure
+   jet-ski panel, so the direct channel reads first everywhere it appears. */
+.venue-btn--direct {
+  background-color: var(--color-sun);
+  border-color: var(--color-sun);
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.venue-btn--direct .venue-btn__arrow {
+  opacity: 0.9;
+}
+.venue-btn--direct:hover,
+.venue-btn--direct:focus-visible {
+  background-color: var(--color-sun);
+  border-color: var(--color-sun);
+  color: var(--color-ink);
+  filter: brightness(0.95);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.venue-btn--direct:hover .venue-btn__arrow,
+.venue-btn--direct:focus-visible .venue-btn__arrow {
+  opacity: 1;
+}
+/* Guard: on the azure jet-ski panel, any non-direct venue button inverts to
+   white so it never drops below AA on the dark ground (Book Direct stays sun).
+   Defensive: the panel renders Book Direct alone today, but this keeps a future
+   secondary venue legible without a contrast regression. */
+.jetski-panel__venues .venue-btn:not(.venue-btn--direct) {
+  color: var(--color-white);
+  border-color: color-mix(in srgb, var(--color-white) 55%, transparent);
+}
+.jetski-panel__venues .venue-btn:not(.venue-btn--direct):hover,
+.jetski-panel__venues .venue-btn:not(.venue-btn--direct):focus-visible {
+  background-color: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-azure-ink);
+}
 /* "Soon" state: a venue whose listing is not live yet (GetMyBoat, RVshare).
    Visible and same footprint as a real button, but muted and non-interactive. */
 .venue-btn--soon {

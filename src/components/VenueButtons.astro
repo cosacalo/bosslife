@@ -10,7 +10,16 @@
 //              venues become "Book on <venue>". Used on detail pages.
 // The on-navy variant was cut (design-direction §3.7): no home section needs
 // venue buttons on a dark ground, so that untested surface is removed.
-const { venues = [], label = 'Book this one', bookName = null } = Astro.props;
+// emphasizeDirect: give the Direct button the loud sun-yellow primary fill.
+// True on the decision surfaces (detail booking box, jet-ski panel) where there
+// is one per view; false on the home browse cards so yellow stays rationed and
+// the card's primary stays "View the unit". Book Direct still leads by order.
+const {
+  venues = [],
+  label = 'Book this one',
+  bookName = null,
+  emphasizeDirect = true,
+} = Astro.props;
 
 // Resolve the "Direct" anchor. On a detail page (bookName set) we need an
 // absolute path back to the home contact section, not a bare "#contact".
@@ -21,7 +30,13 @@ const base = import.meta.env.BASE_URL.endsWith('/')
 // Render every venue. Venues with a url are live links; venues without one
 // (GetMyBoat, RVshare pending) render as a visible "Soon" control so the
 // layout stays consistent and renters know the channel is coming.
-const items = venues.filter((v) => v && v.name);
+// Book Direct is the primary path, so it leads: first in order and carrying the
+// sun-yellow treatment. Other venues hold their original order after it.
+const filtered = venues.filter((v) => v && v.name);
+const items = [
+  ...filtered.filter((v) => v.name === 'Direct'),
+  ...filtered.filter((v) => v.name !== 'Direct'),
+];
 
 function hrefFor(v) {
   if (v.url === '#contact') {
@@ -45,7 +60,7 @@ const isExternal = (v) => v.url !== '#contact';
     items.map((v) =>
       v.url ? (
         <a
-          class="venue-btn"
+          class={`venue-btn${emphasizeDirect && v.name === 'Direct' ? ' venue-btn--direct' : ''}`}
           href={hrefFor(v)}
           {...(isExternal(v)
             ? { target: '_blank', rel: 'noopener noreferrer' }
