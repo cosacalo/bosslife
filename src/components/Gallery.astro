@@ -192,7 +192,15 @@ const hasMedia = count > 0;
           }
 
           function stop() { if (timer) { clearInterval(timer); timer = null; } }
-          function start() { if (reduce) return; stop(); timer = window.setInterval(function () { go(cur + 1); }, 5000); }
+          function start() {
+            if (reduce) return;
+            // A playing clip wins over everything: never auto-advance while it
+            // plays, so moving the mouse away (which hides the controls overlay)
+            // does not cut it off. The carousel resumes only once it pauses/ends.
+            if (videoEl && !videoEl.paused) return;
+            stop();
+            timer = window.setInterval(function () { go(cur + 1); }, 5000);
+          }
           // A manual move advances, then restarts the timer so it does not fight the user.
           function manual(i) { go(i); if (!reduce) start(); }
 
