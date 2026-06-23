@@ -22,7 +22,7 @@ const links = [
       <a href={homeHref} aria-label="Boss Life Rentals, home">
         <img src={logo} alt="Boss Life Rentals" width="180" height="96" loading="lazy" decoding="async" />
       </a>
-      <p class="footer__tag">Sarasota, Florida. The life we live, yours for a day.</p>
+      <p class="footer__tag">Boats, RVs, and jet skis, kept like our own.</p>
     </div>
 
     <nav class="footer__nav" aria-label="Footer">
@@ -38,6 +38,7 @@ const links = [
 
   <div class="container-x footer__legal">
     <p>Boss Life Rentals LLC &middot; {year}</p>
+    <p class="footer__credit">Logo by Carlitos &middot; Marketing by Brianna</p>
     <a href={privacyHref}>Privacy Policy</a>
   </div>
 </footer>
@@ -97,6 +98,11 @@ const links = [
     padding-top: 1.5rem;
     font-size: 0.875rem;
     color: rgba(255, 255, 255, 0.6);
+  }
+  .footer__credit {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
   }
   .footer__legal a {
     color: rgba(255, 255, 255, 0.85);
