@@ -245,6 +245,10 @@ export const units = [
     chips: ['Two to ride', '3 seats each', 'Brake and reverse'],
     heroVideo: '/jetski-rotate.mp4',
     heroPoster: '/jetski-rotate-poster.jpg',
+    // Real ride clip (user-played, not the abstract rotating hero).
+    clipVideo: '/jetski-ride.mp4',
+    clipPoster: '/jetski-ride-poster.jpg',
+    clipTitle: 'Out on the bay',
     // Per-model cards (the "two to choose from" block + the fleet pictures).
     models: [
       {
@@ -297,7 +301,6 @@ export const units = [
     pricing: null,
     operatingArea: 'Sarasota, Florida and the surrounding area.',
     images: [
-      'seadoo-01.jpg',
       'seadoo-02.jpg',
       'seadoo-03.jpg',
       'seadoo-04.jpg',
