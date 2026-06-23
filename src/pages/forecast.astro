@@ -1,0 +1,760 @@
+---
+import Base from '../layouts/Base.astro';
+import Footer from '../components/Footer.astro';
+
+// Base-path-aware asset URL (matches the rest of the site).
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : import.meta.env.BASE_URL + '/';
+const logo = base + 'forecast-logo.png';
+const homeHref = base;
+---
+
+<Base
+  path="/forecast"
+  title="Boating Forecast | Boss Life Rentals"
+  description="A live Sarasota boating forecast for your rental day: wind, seas, rain, UV, tides, and sun, pulled straight from the official NOAA models."
+>
+  {/* Unlisted utility page. Live, but intentionally not linked in the main nav yet.
+      All data is fetched client-side from Open-Meteo (NOAA models) and NOAA CO-OPS,
+      both CORS-open, so this works on the static GitHub Pages build with no backend. */}
+  <header class="fc-topnav">
+    <div class="container-x fc-topnav__inner">
+      <a href={homeHref} aria-label="Boss Life Rentals, home">
+        <img src={logo} alt="Boss Life Rentals" width="150" height="75" />
+      </a>
+      <a href={homeHref} class="fc-topnav__back">Back to home</a>
+    </div>
+  </header>
+
+  <main id="forecast-app" class="fc-main">
+    <div class="container-x">
+      <p class="t-eyebrow fc-eyebrow">Boating Forecast</p>
+      <h1 class="t-h1">Check your day on the water</h1>
+      <p class="fc-lede">
+        Pick your rental day and window. We pull the live numbers straight from the
+        official NOAA models and the NOAA tide station, and build your card. Real
+        values only. Nothing guessed.
+      </p>
+
+      {/* ---- Controls ---- */}
+      <form class="fc-controls" id="fc-form" autocomplete="off">
+        <div class="fc-field">
+          <label for="fc-date">Rental day</label>
+          <input type="date" id="fc-date" name="date" required />
+        </div>
+        <div class="fc-field">
+          <label for="fc-start">Start</label>
+          <input type="time" id="fc-start" name="start" value="09:00" step="900" required />
+        </div>
+        <div class="fc-field">
+          <label for="fc-end">End</label>
+          <input type="time" id="fc-end" name="end" value="17:00" step="900" required />
+        </div>
+        <button type="submit" class="btn btn-primary fc-go">Update card</button>
+        <button type="button" class="btn btn-secondary fc-copy" id="fc-copy">Copy link</button>
+      </form>
+      <p class="fc-hint">
+        Pick a day and window, then <b>Copy link</b> to send a renter straight to their own forecast.
+      </p>
+
+      {/* ---- Status / errors ---- */}
+      <div class="fc-status" id="fc-status" role="status" aria-live="polite"></div>
+
+      {/* ---- The card (rendered by JS) ---- */}
+      <div class="fc-cardwrap">
+        <div class="fc-card" id="fc-card" aria-live="polite">
+          <div class="fc-inner" id="fc-inner"></div>
+        </div>
+      </div>
+
+      {/* ---- Sources / honesty footnote ---- */}
+      <p class="fc-sources" id="fc-sources">
+        Wind, rain, seas, UV, and sun come from the
+        <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+        run of the NOAA forecast models. Tides come from
+        <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726083" target="_blank" rel="noopener">NOAA station 8726083 (Sarasota)</a>.
+        Forecast only. Always check conditions yourself before you leave the ramp.
+      </p>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<script is:inline define:vars={{ LOGO_URL: logo }}>
+/* ============================================================================
+   Boss Life — live boating forecast (Option A: fully automatic).
+   Fetches three CORS-open public sources in the browser, transforms them into
+   the card shape, derives labels from conservative thresholds, and renders.
+   No backend, no API keys. Static-site safe.
+
+   Safety stance carried over from the source docs: this is a live pass-through.
+   We transcribe real numbers only. If a source fails or has no data for the
+   chosen day, we say so and leave that field off, never a guess.
+   ============================================================================ */
+(function () {
+  'use strict';
+
+  /* ---- Fixed launch point (Sarasota / Centennial Park ramp area) ---- */
+  var LAT = 27.347, LON = -82.548;     // point forecast
+  var MLAT = 27.27, MLON = -82.62;     // just offshore (marine)
+  var STATION = '8726083';             // NOAA "Sarasota" tides
+  var AREA = 'Sarasota, FL';
+  var STATION_LABEL = 'Sarasota Bay, NOAA #8726083';
+
+  /* ---- brand palette for the SVGs ---- */
+  var INK = '#002454', AZURE = '#0c78e4', AZURE_INK = '#0a63c4', SLATE = '#5b708a',
+      SUN = '#fcd80c', WHITE = '#ffffff', AZURE_LT = '#9cc6f2';
+  var FONT = "'Hanken Grotesk Variable','Hanken Grotesk',sans-serif",
+      DISPLAY = "'Bricolage Grotesque Variable','Bricolage Grotesque',sans-serif";
+
+  /* trip window in decimal hours, set per render */
+  var WIN_START = 9.0, WIN_END = 17.0;
+
+  /* ---------------------------------------------------------------- helpers */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // today's date (YYYY-MM-DD) in America/New_York, regardless of viewer TZ
+  function etToday() {
+    var parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date());
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    return o.year + '-' + o.month + '-' + o.day;
+  }
+
+  function shiftYmd(ymd, delta) {
+    var p = ymd.split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    d.setUTCDate(d.getUTCDate() + delta);
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+
+  // "2026-06-22T06:35" or "2026-06-22 06:35" -> {h, m}
+  function hm(s) { return { h: +s.slice(11, 13), m: +s.slice(14, 16) }; }
+  function decHour(s) { var t = hm(s); return t.h + t.m / 60; }
+  function fmt12(s) {
+    var t = hm(s), h = t.h, m = t.m, ap = h >= 12 ? 'PM' : 'AM';
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ':' + pad2(m) + ' ' + ap;
+  }
+  function winLabel(start, end) {
+    function f(v) {
+      var h = Math.floor(v), m = Math.round((v - h) * 60), ap = h >= 12 ? 'PM' : 'AM';
+      var hh = h % 12; if (hh === 0) hh = 12;
+      return hh + ':' + pad2(m) + ' ' + ap;
+    }
+    return f(start) + ' to ' + f(end);
+  }
+
+  var DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function dateParts(ymd) {
+    var p = ymd.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
+    return { dow: DOW[d.getDay()], num: String(+p[2]), mo: MON[+p[1] - 1], year: p[0] };
+  }
+
+  function compass(deg) {
+    var dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
+  }
+
+  function timeToDec(str) { // "09:00" -> 9.0
+    var p = str.split(':'); return (+p[0]) + (+p[1]) / 60;
+  }
+
+  /* ------------------------------------------------------------------ fetch */
+  function fUrl(d) {
+    return 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
+      '&hourly=precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m' +
+      '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
+  }
+  function mUrl(d) {
+    return 'https://marine-api.open-meteo.com/v1/marine?latitude=' + MLAT + '&longitude=' + MLON +
+      '&hourly=wave_height,wave_period,wind_wave_height,wind_wave_period' +
+      '&length_unit=imperial&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
+  }
+  function tUrl(d) {
+    var b = shiftYmd(d, -1).replace(/-/g, ''), e = shiftYmd(d, 1).replace(/-/g, '');
+    return 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=' + b +
+      '&end_date=' + e + '&station=' + STATION + '&product=predictions&datum=MLLW' +
+      '&time_zone=lst_ldt&interval=hilo&units=english&format=json&application=BossLifeRentals';
+  }
+  function getJson(url) {
+    // No 'Cache-Control' request header on purpose: it is not CORS-safelisted, so
+    // it would force a preflight that Open-Meteo / NOAA reject (their
+    // access-control-allow-headers do not include cache-control). The fetch
+    // `cache: 'no-store'` option keeps responses fresh without any extra header.
+    return fetch(url, { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+        return r.json();
+      });
+  }
+
+  /* -------------------------------------------------------------- transform */
+  // Build the card data object from raw responses. Throws if the core
+  // (forecast) source has no usable data for the day.
+  function build(date, fc, mar, tide, errors) {
+    var f = {
+      area: AREA, station: STATION_LABEL,
+      date: dateParts(date),
+      window: winLabel(WIN_START, WIN_END),
+    };
+
+    if (!fc || !fc.hourly || !fc.hourly.time || !fc.hourly.time.length) {
+      throw new Error('No forecast data for ' + date + ' (it may be outside the 16-day model range).');
+    }
+
+    var H = fc.hourly, D = fc.daily;
+    var times = H.time;
+    // indices inside the rental window (hourly data is on the hour)
+    var win = [];
+    for (var i = 0; i < times.length; i++) {
+      var h = +times[i].slice(11, 13);
+      if (h >= Math.floor(WIN_START) && h <= Math.ceil(WIN_END)) win.push(i);
+    }
+    if (!win.length) win = times.map(function (_, i) { return i; });
+
+    function pick(arr) { return win.map(function (i) { return arr[i]; }).filter(function (v) { return v != null; }); }
+
+    /* ---- wind ---- */
+    var ws = pick(H.wind_speed_10m), wg = pick(H.wind_gusts_10m), wd = pick(H.wind_direction_10m);
+    var wMin = Math.round(Math.min.apply(null, ws)), wMax = Math.round(Math.max.apply(null, ws));
+    var gMax = wg.length ? Math.round(Math.max.apply(null, wg)) : null;
+    var dStart = compass(wd[0]), dEnd = compass(wd[wd.length - 1]);
+    var dir = dStart === dEnd ? dStart : dStart + '→' + dEnd; // arrow only, not an em dash
+    var windNote;
+    if (wMax < 10) windNote = 'Light and glassy.';
+    else if (wMax < 15) windNote = 'Light to moderate.';
+    else if (wMax < 20) windNote = 'Moderate, some chop.';
+    else windNote = 'Breezy, expect a bumpy ride.';
+    if (gMax && gMax >= wMax + 6) windNote += ' Gusts to ' + gMax + ' kt.';
+    f.wind = { value: (wMin === wMax ? String(wMax) : wMin + '–' + wMax), unit: 'kt', dir: dir, note: windNote };
+
+    /* ---- seas (marine) ---- */
+    if (mar && mar.hourly && mar.hourly.wave_height) {
+      var MH = mar.hourly, mt = MH.time, mwin = [];
+      for (var j = 0; j < mt.length; j++) {
+        var mh = +mt[j].slice(11, 13);
+        if (mh >= Math.floor(WIN_START) && mh <= Math.ceil(WIN_END)) mwin.push(j);
+      }
+      if (!mwin.length) mwin = mt.map(function (_, k) { return k; });
+      var wav = mwin.map(function (k) { return MH.wave_height[k]; }).filter(function (v) { return v != null; });
+      var per = mwin.map(function (k) { return MH.wave_period[k]; }).filter(function (v) { return v != null; });
+      if (wav.length) {
+        var maxW = Math.max.apply(null, wav);
+        var avgP = per.length ? Math.round(per.reduce(function (a, b) { return a + b; }, 0) / per.length) : null;
+        var tag, seaNote;
+        if (maxW <= 1) { tag = 'glassy'; seaNote = 'A foot or less. Easy water.'; }
+        else if (maxW <= 2) { tag = 'easy'; seaNote = 'Around one to two feet.'; }
+        else if (maxW <= 3) { tag = 'moderate'; seaNote = 'Two to three feet, a little bumpy.'; }
+        else { tag = 'rough'; seaNote = 'Over three feet. Pick your spots.'; }
+        f.seas = {
+          value: maxW <= 1 ? '≤1' : (Math.round(maxW * 10) / 10).toFixed(1),
+          unit: 'ft', period: avgP != null ? avgP + ' sec' : '', periodTag: tag, note: seaNote,
+          maxW: maxW,
+        };
+      }
+    }
+    if (!f.seas) {
+      errors.push('marine seas unavailable for this day');
+      f.seas = { value: 'n/a', unit: '', period: '', periodTag: '', note: 'Sea-state data was not available for this day.', maxW: null };
+    }
+
+    /* ---- rain ---- */
+    var hourlyRain = [];
+    for (var r = 0; r < 24; r++) hourlyRain.push(H.precipitation_probability[r] == null ? 0 : H.precipitation_probability[r]);
+    var tripMax = Math.max.apply(null, pick(H.precipitation_probability).concat([0]));
+    var dayMax = (D && D.precipitation_probability_max) ? D.precipitation_probability_max[0] : tripMax;
+    var rTag, rNote;
+    if (tripMax < 10) { rTag = 'Dry on the water'; rNote = 'Skies stay dry through your window.'; }
+    else if (tripMax < 30) { rTag = 'Slight chance, ~' + tripMax + '%'; rNote = 'Mostly dry. Only a slight chance near <b>' + tripMax + '%</b> in your window.'; }
+    else if (tripMax < 60) { rTag = 'Scattered showers, ~' + tripMax + '%'; rNote = 'Scattered showers possible, up to about <b>' + tripMax + '%</b> in your window.'; }
+    else { rTag = 'Wet, ~' + tripMax + '%'; rNote = 'A good chance of rain, up to about <b>' + tripMax + '%</b>. Keep an eye on the radar.'; }
+    f.rain = { tripMax: tripMax, dayMax: dayMax, tag: rTag, note: rNote, hourly: hourlyRain };
+
+    /* ---- UV ---- */
+    var uvMax = (D && D.uv_index_max) ? D.uv_index_max[0] : null;
+    if (uvMax != null) {
+      var uvR = Math.round(uvMax), uvCat;
+      if (uvR <= 2) uvCat = '<b>Low.</b> Easy day for the skin.';
+      else if (uvR <= 5) uvCat = '<b>Moderate.</b> Sunscreen if you burn.';
+      else if (uvR <= 7) uvCat = '<b>High.</b> Sunscreen and a hat.';
+      else if (uvR <= 10) uvCat = '<b>Very high.</b> Sunscreen, hat, and shade.';
+      else uvCat = '<b>Extreme.</b> Cover up and reapply often.';
+      f.uv = { value: String(uvR), unit: 'of 11', note: uvCat };
+    } else {
+      f.uv = { value: 'n/a', unit: '', note: 'UV data was not available.' };
+    }
+
+    /* ---- sun ---- */
+    if (D && D.sunrise && D.sunset) {
+      f.sun = { rise: fmt12(D.sunrise[0]), set: fmt12(D.sunset[0]) };
+    } else {
+      f.sun = { rise: 'n/a', set: 'n/a' };
+    }
+
+    /* ---- tides ---- */
+    var dayTides = [], prevAnchor = null, nextAnchor = null;
+    if (tide && tide.predictions && tide.predictions.length) {
+      tide.predictions.forEach(function (p) {
+        var d = p.t.slice(0, 10), high = (p.type === 'H');
+        var ev = { type: high ? 'h' : 'l', ft: parseFloat(p.v), time: fmt12(p.t), t: decHour(p.t), date: d };
+        if (d === date) dayTides.push(ev);
+        else if (d < date) prevAnchor = { t: ev.t - 24, v: ev.ft };           // last before -> negative t
+        else if (d > date && !nextAnchor) nextAnchor = { t: ev.t + 24, v: ev.ft }; // first after -> >24
+      });
+    }
+    f.tides = dayTides;
+    f._tideAnchors = { prev: prevAnchor, next: nextAnchor };
+    if (!dayTides.length) errors.push('tide predictions unavailable for this day');
+
+    /* ---- verdict (conservative, threshold-driven) ---- */
+    var sMax = f.seas.maxW;
+    var caution = (wMax >= 20) || (gMax && gMax >= 25) || (sMax != null && sMax > 3) || (tripMax >= 60);
+    var watch = (wMax >= 15) || (sMax != null && sMax > 2) || (tripMax >= 40);
+    f.verdict = { stamp: caution ? 'Check conditions' : (watch ? 'A bit of chop' : 'Good to go'), level: caution ? 'caution' : (watch ? 'watch' : 'good') };
+
+    // build the verdict note from real pieces, no invented detail
+    var bits = [];
+    bits.push(windNote.replace(/\.$/, '') + ', wind ' + f.wind.value + ' kt ' + dir + '.');
+    if (sMax != null) bits.push('Seas ' + (f.seas.value === '≤1' ? 'a foot or less' : f.seas.value + ' ft') + '.');
+    bits.push(tripMax < 10 ? 'Dry through your window.' : 'Rain chance up to <b>' + tripMax + '%</b>.');
+    // highest water of the day
+    if (dayTides.length) {
+      var hi = dayTides.filter(function (t) { return t.type === 'h'; }).sort(function (a, b) { return b.ft - a.ft; })[0];
+      if (hi) bits.push('Highest water around <b>' + hi.time + '</b>.');
+    }
+    if (D && D.temperature_2m_max) bits.push('Highs near ' + Math.round(D.temperature_2m_max[0]) + '°.');
+    f.verdict.note = bits.join(' ');
+
+    f.updated = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+    }).format(new Date()) + ' ET';
+
+    return f;
+  }
+
+  /* -------------------------------------------------------------- SVG: tide */
+  function buildTideSVG(f) {
+    var W = 1000, H = 230, padT = 34, padB = 40, padL = 10, padR = 10;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var evs = f.tides.map(function (p) { return { t: p.t, v: p.ft }; });
+    if (!evs.length) {
+      return '<svg class="fc-tide-svg" viewBox="0 0 ' + W + ' ' + H + '"><text x="' + (W / 2) +
+        '" y="' + (H / 2) + '" text-anchor="middle" font-family="' + FONT + '" font-size="15" fill="' + SLATE +
+        '">Tide data unavailable for this day.</text></svg>';
+    }
+    var ex = [];
+    if (f._tideAnchors && f._tideAnchors.prev) ex.push(f._tideAnchors.prev);
+    else ex.push({ t: evs[0].t - 6.2, v: evs[0].v });
+    evs.forEach(function (e) { ex.push(e); });
+    if (f._tideAnchors && f._tideAnchors.next) ex.push(f._tideAnchors.next);
+    else ex.push({ t: evs[evs.length - 1].t + 6.2, v: evs[evs.length - 1].v });
+
+    var vals = ex.map(function (e) { return e.v; });
+    var minV = Math.min.apply(null, vals) - 0.5, maxV = Math.max.apply(null, vals) + 0.4;
+    if (maxV - minV < 1) maxV = minV + 1;
+    var x = function (t) { return padL + (t / 24) * plotW; };
+    var y = function (v) { return padT + (1 - (v - minV) / (maxV - minV)) * plotH; };
+    function val(t) {
+      for (var i = 0; i < ex.length - 1; i++) {
+        if (t >= ex[i].t && t <= ex[i + 1].t) {
+          var fr = (1 - Math.cos(Math.PI * (t - ex[i].t) / (ex[i + 1].t - ex[i].t))) / 2;
+          return ex[i].v + (ex[i + 1].v - ex[i].v) * fr;
+        }
+      }
+      return t < ex[0].t ? ex[0].v : ex[ex.length - 1].v;
+    }
+    var pts = [];
+    for (var t = 0; t <= 24.001; t += 0.2) pts.push([x(t), y(val(t))]);
+    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    var area = line + ' L ' + x(24).toFixed(1) + ' ' + (padT + plotH).toFixed(1) + ' L ' + padL.toFixed(1) + ' ' + (padT + plotH).toFixed(1) + ' Z';
+    var baseY = padT + plotH;
+    var wx1 = x(WIN_START), wx2 = x(WIN_END);
+    var ticks = [0, 6, 12, 18, 24], tickLabels = { 0: '12A', 6: '6A', 12: '12P', 18: '6P', 24: '12A' };
+
+    var markers = f.tides.map(function (p) {
+      var px = x(p.t), py = y(p.ft), high = p.type === 'h', col = high ? AZURE : SLATE;
+      var lblY = high ? py - 14 : py + 24;
+      return '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="6" fill="' + WHITE + '" stroke="' + col + '" stroke-width="2.5"/>' +
+        '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="2.2" fill="' + col + '"/>' +
+        '<text x="' + px.toFixed(1) + '" y="' + lblY.toFixed(1) + '" text-anchor="middle" font-family="' + FONT + '" font-size="13" font-weight="700" fill="' + INK + '">' + p.ft.toFixed(2) + ' ft</text>';
+    }).join('');
+
+    function sunTick(t, label) {
+      var px = x(t);
+      return '<line x1="' + px.toFixed(1) + '" y1="' + baseY.toFixed(1) + '" x2="' + px.toFixed(1) + '" y2="' + (baseY + 6).toFixed(1) + '" stroke="' + SLATE + '" stroke-width="1"/>' +
+        '<text x="' + px.toFixed(1) + '" y="' + (baseY + 22).toFixed(1) + '" text-anchor="middle" font-family="' + FONT + '" font-size="11.5" font-weight="500" fill="' + SLATE + '">' + label + '</text>';
+    }
+
+    return '<svg class="fc-tide-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="fcSeaFill" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="' + AZURE + '" stop-opacity="0.32"/>' +
+      '<stop offset="1" stop-color="' + AZURE + '" stop-opacity="0.05"/></linearGradient></defs>' +
+      '<rect x="' + wx1.toFixed(1) + '" y="' + padT.toFixed(1) + '" width="' + (wx2 - wx1).toFixed(1) + '" height="' + plotH.toFixed(1) + '" fill="' + SUN + '" opacity="0.22" rx="4"/>' +
+      '<line x1="' + wx1.toFixed(1) + '" y1="' + padT + '" x2="' + wx1.toFixed(1) + '" y2="' + baseY + '" stroke="' + SUN + '" stroke-width="2" stroke-dasharray="3 3"/>' +
+      '<line x1="' + wx2.toFixed(1) + '" y1="' + padT + '" x2="' + wx2.toFixed(1) + '" y2="' + baseY + '" stroke="' + SUN + '" stroke-width="2" stroke-dasharray="3 3"/>' +
+      '<text x="' + ((wx1 + wx2) / 2).toFixed(1) + '" y="' + (padT - 13).toFixed(1) + '" text-anchor="middle" font-family="' + DISPLAY + '" font-size="11.5" font-weight="800" letter-spacing="1.2" fill="' + AZURE_INK + '">YOUR TRIP</text>' +
+      ticks.map(function (t) { return '<line x1="' + x(t).toFixed(1) + '" y1="' + padT + '" x2="' + x(t).toFixed(1) + '" y2="' + baseY + '" stroke="' + INK + '" stroke-opacity="0.06" stroke-width="1"/>'; }).join('') +
+      '<path d="' + area + '" fill="url(#fcSeaFill)"/>' +
+      '<path d="' + line + '" fill="none" stroke="' + AZURE + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<line x1="' + padL + '" y1="' + baseY + '" x2="' + (W - padR) + '" y2="' + baseY + '" stroke="' + INK + '" stroke-opacity="0.5" stroke-width="1.2"/>' +
+      ticks.map(function (t) { return sunTick(t, tickLabels[t]); }).join('') + markers + '</svg>';
+  }
+
+  /* -------------------------------------------------------------- SVG: rain */
+  function buildRainSVG(f) {
+    var W = 1000, H = 150, padT = 16, padB = 24, padL = 10, padR = 10;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var hourly = f.rain.hourly;
+    var x = function (t) { return padL + (t / 24) * plotW; };
+    var base = padT + plotH, yTop = padT, barW = (plotW / 24) * 0.62;
+    var wx1 = x(WIN_START), wx2 = x(WIN_END), y50 = base - 0.5 * plotH;
+    var ticks = [0, 6, 12, 18, 24], lbl = { 0: '12A', 6: '6A', 12: '12P', 18: '6P', 24: '12A' };
+
+    var barLabels = '';
+    var bars = hourly.map(function (p, h) {
+      var cx = x(h + 0.5), bh = Math.max(2, (p / 100) * plotH);
+      var inWin = (h + 0.5) >= WIN_START && (h + 0.5) <= WIN_END, col = inWin ? AZURE : AZURE_LT;
+      if (inWin && p >= 5) {
+        var ly = Math.min(base - bh - 7, base - 14);
+        barLabels += '<text x="' + cx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle" font-family="' + FONT + '" font-size="13" font-weight="700" fill="' + AZURE_INK + '">' + p + '%</text>';
+      }
+      return '<rect x="' + (cx - barW / 2).toFixed(1) + '" y="' + (base - bh).toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="3" fill="' + col + '"/>';
+    }).join('');
+
+    return '<svg class="fc-rain-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+      '<rect x="' + wx1.toFixed(1) + '" y="' + yTop + '" width="' + (wx2 - wx1).toFixed(1) + '" height="' + plotH.toFixed(1) + '" fill="' + SUN + '" opacity="0.22" rx="4"/>' +
+      '<line x1="' + wx1.toFixed(1) + '" y1="' + yTop + '" x2="' + wx1.toFixed(1) + '" y2="' + base + '" stroke="' + SUN + '" stroke-width="2" stroke-dasharray="3 3"/>' +
+      '<line x1="' + wx2.toFixed(1) + '" y1="' + yTop + '" x2="' + wx2.toFixed(1) + '" y2="' + base + '" stroke="' + SUN + '" stroke-width="2" stroke-dasharray="3 3"/>' +
+      '<line x1="' + padL + '" y1="' + y50.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y50.toFixed(1) + '" stroke="' + INK + '" stroke-opacity="0.1" stroke-dasharray="3 4"/>' +
+      '<text x="' + (padL + 2) + '" y="' + (yTop + 9).toFixed(1) + '" font-family="' + FONT + '" font-size="10.5" font-weight="500" fill="' + SLATE + '">100%</text>' +
+      '<text x="' + (padL + 2) + '" y="' + (y50 - 3).toFixed(1) + '" font-family="' + FONT + '" font-size="10.5" font-weight="500" fill="' + SLATE + '">50%</text>' +
+      bars + barLabels +
+      '<line x1="' + padL + '" y1="' + base + '" x2="' + (W - padR) + '" y2="' + base + '" stroke="' + INK + '" stroke-opacity="0.5" stroke-width="1.2"/>' +
+      ticks.map(function (t) { return '<line x1="' + x(t).toFixed(1) + '" y1="' + base + '" x2="' + x(t).toFixed(1) + '" y2="' + (base + 5) + '" stroke="' + SLATE + '" stroke-width="1"/><text x="' + x(t).toFixed(1) + '" y="' + (base + 18).toFixed(1) + '" text-anchor="middle" font-family="' + FONT + '" font-size="11.5" font-weight="500" fill="' + SLATE + '">' + lbl[t] + '</text>'; }).join('') +
+      '</svg>';
+  }
+
+  /* ------------------------------------------------------------------ icons */
+  function windIcon() { return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + INK + '" stroke-width="1.8" stroke-linecap="round"><path d="M3 9h11.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 14h15a2.5 2.5 0 1 1-2.5 2.5"/></svg>'; }
+  function seaIcon() { return '<svg width="24" height="22" viewBox="0 0 26 22" fill="none" stroke="' + INK + '" stroke-width="1.8" stroke-linecap="round"><path d="M2 7q3-3.2 6 0t6 0 6 0"/><path d="M2 13q3-3.2 6 0t6 0 6 0"/><path d="M2 19q3-3.2 6 0t6 0 6 0"/></svg>'; }
+  function uvIcon() {
+    var spokes = [0, 45, 90, 135, 180, 225, 270, 315].map(function (a) {
+      var r = a * Math.PI / 180, x1 = 12 + Math.cos(r) * 7, y1 = 12 + Math.sin(r) * 7, x2 = 12 + Math.cos(r) * 9.2, y2 = 12 + Math.sin(r) * 9.2;
+      return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }).join('');
+    return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="' + INK + '" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/>' + spokes + '</svg>';
+  }
+  function cloudRainIcon() { return '<svg width="26" height="23" viewBox="0 0 28 26" fill="none" stroke="' + AZURE_INK + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 16a4.5 4.5 0 0 1-.3-9 6 6 0 0 1 11.3 1.2A4 4 0 0 1 20 16"/><line x1="9" y1="19" x2="8" y2="22"/><line x1="14" y1="19.5" x2="13" y2="22.5"/><line x1="19" y1="19" x2="18" y2="22"/></svg>'; }
+  function tideIcon() { return '<svg width="24" height="22" viewBox="0 0 26 22" fill="none" stroke="' + AZURE_INK + '" stroke-width="1.8" stroke-linecap="round"><path d="M2 15q3.5-7 6.5 0t6.5 0 6.5 0"/><line x1="2" y1="19.5" x2="23" y2="19.5"/></svg>'; }
+  function checkIcon() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="' + INK + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5l3.5 3.5L15 5"/></svg>'; }
+  function alertIcon() { return '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="' + INK + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5 16.5 15.5H1.5z"/><line x1="9" y1="7.5" x2="9" y2="11"/><circle cx="9" cy="13.4" r="0.2"/></svg>'; }
+  function sunriseIcon(c) { return '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="' + c + '" stroke-width="1.9" stroke-linecap="round"><line x1="5" y1="25" x2="29" y2="25"/><path d="M11 25a6 6 0 0 1 12 0"/><line x1="17" y1="8" x2="17" y2="13"/><line x1="8.5" y1="12" x2="11.5" y2="14.5"/><line x1="25.5" y1="12" x2="22.5" y2="14.5"/><path d="M13 20l4-4 4 4"/></svg>'; }
+  function sunsetIcon(c) { return '<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="' + c + '" stroke-width="1.9" stroke-linecap="round"><line x1="5" y1="25" x2="29" y2="25"/><path d="M11 25a6 6 0 0 1 12 0"/><line x1="17" y1="13" x2="17" y2="8"/><line x1="8.5" y1="12" x2="11.5" y2="14.5"/><line x1="25.5" y1="12" x2="22.5" y2="14.5"/><path d="M13 16l4 4 4-4"/></svg>'; }
+
+  /* ----------------------------------------------------------------- render */
+  function render(f) {
+    var tideEvents = f.tides.map(function (p) {
+      var high = p.type === 'h';
+      return '<div class="fc-tev"><div class="fc-tk ' + (high ? 'high' : 'low') + '">' + (high ? 'High' : 'Low') +
+        ' Tide</div><div class="fc-tf">' + p.ft.toFixed(2) + '<span style="font-size:14px;color:' + SLATE + ';font-weight:600"> ft</span></div>' +
+        '<div class="fc-tt">' + p.time + '</div></div>';
+    }).join('') || '<div class="fc-tev" style="grid-column:1 / -1"><div class="fc-tt">No tide predictions for this day.</div></div>';
+
+    var stampIcon = f.verdict.level === 'good' ? checkIcon() : alertIcon();
+    var badgeClass = 'fc-badge fc-badge--' + f.verdict.level;
+
+    document.getElementById('fc-inner').innerHTML =
+      '<div class="fc-head">' +
+        '<div class="fc-head-left">' +
+          '<img class="fc-logo" src="' + LOGO_URL + '" alt="Boss Life Rentals" />' +
+          '<div class="fc-eyebrow2">Boating Forecast</div>' +
+          '<div class="fc-title">' + f.date.dow + "'s Water</div>" +
+          '<div class="fc-subtitle">' + f.area + ' &nbsp;&middot;&nbsp; Tides at <b>' + f.station + '</b></div>' +
+        '</div>' +
+        '<div class="fc-head-right">' +
+          '<div class="fc-datebox"><div class="fc-dow">' + f.date.dow + '</div><div class="fc-dnum">' + f.date.num + '</div><div class="fc-dmo">' + f.date.mo + ' ' + f.date.year + '</div></div>' +
+          '<div class="' + badgeClass + '">' + stampIcon + ' ' + f.verdict.stamp + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fc-window">' +
+        '<div class="fc-wleft"><div class="fc-wlabel">Your rental window</div><div class="fc-wtime">' + f.window + '</div></div>' +
+        '<div class="fc-wnote">' + f.verdict.note + '</div>' +
+      '</div>' +
+      '<div class="fc-tiles">' +
+        '<div class="fc-tile"><div class="fc-ic">' + windIcon() + '</div><div class="fc-tbody"><div class="fc-tlabel">Wind</div><div class="fc-tval">' + f.wind.value + '<span class="fc-u"> ' + f.wind.unit + ' ' + f.wind.dir + '</span></div><div class="fc-tsub">' + f.wind.note + '</div></div></div>' +
+        '<div class="fc-tile"><div class="fc-ic">' + seaIcon() + '</div><div class="fc-tbody"><div class="fc-tlabel">Seas</div><div class="fc-tval">' + f.seas.value + '<span class="fc-u"> ' + f.seas.unit + '</span>' + (f.seas.period ? '<span class="fc-period">' + f.seas.period + ' <em>' + f.seas.periodTag + '</em></span>' : '') + '</div><div class="fc-tsub">' + f.seas.note + '</div></div></div>' +
+        '<div class="fc-tile"><div class="fc-ic">' + uvIcon() + '</div><div class="fc-tbody"><div class="fc-tlabel">UV index</div><div class="fc-tval">' + f.uv.value + '<span class="fc-u"> ' + f.uv.unit + '</span></div><div class="fc-tsub">' + f.uv.note + '</div></div></div>' +
+      '</div>' +
+      '<div class="fc-panel"><div class="fc-panel-head"><div class="fc-panel-title">' + cloudRainIcon() + '<span>Rain chance by hour</span></div><div class="fc-panel-tag">' + f.rain.tag + '</div></div>' + buildRainSVG(f) + '<div class="fc-rs-note">' + f.rain.note + '</div></div>' +
+      '<div class="fc-panel"><div class="fc-panel-head"><div class="fc-panel-title">' + tideIcon() + '<span>Tide forecast</span></div><div class="fc-panel-tag">High and low tide times</div></div>' + buildTideSVG(f) + '<div class="fc-tide-events">' + tideEvents + '</div></div>' +
+      '<div class="fc-sun"><div class="fc-sblk"><div class="fc-sic">' + sunriseIcon(SUN) + '</div><div><div class="fc-slabel">Sunrise</div><div class="fc-sval">' + f.sun.rise + '</div></div></div>' +
+        '<div class="fc-sblk"><div class="fc-sic">' + sunsetIcon(SUN) + '</div><div><div class="fc-slabel">Sunset</div><div class="fc-sval">' + f.sun.set + '</div></div></div></div>' +
+      '<div class="fc-foot"><div class="fc-fl"><span>Updated</span> &nbsp;<b>' + f.updated + '</b> &nbsp;&middot;&nbsp; Forecast only. Always check conditions before departure.</div><div class="fc-brand">Boss Life Rentals</div></div>';
+  }
+
+  /* ------------------------------------------------------------------- glue */
+  var statusEl = document.getElementById('fc-status');
+  var cardEl = document.getElementById('fc-card');
+  var dateEl = document.getElementById('fc-date');
+  var startEl = document.getElementById('fc-start');
+  var endEl = document.getElementById('fc-end');
+  var formEl = document.getElementById('fc-form');
+
+  function setStatus(html, cls) {
+    statusEl.className = 'fc-status' + (cls ? ' fc-status--' + cls : '');
+    statusEl.innerHTML = html;
+  }
+
+  /* ---- shareable-link params (?date=YYYY-MM-DD&start=9:30am&end=3:30pm) ---- */
+  // Accepts "09:30", "9:30", "9:30am", "3:30 PM", or bare hour "9" / "9pm".
+  // Returns "HH:MM" (24h) for the time input, or null if unparseable.
+  function parseTimeParam(v) {
+    if (!v) return null;
+    var m = String(v).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m?)?$/i);
+    if (!m) return null;
+    var h = +m[1], min = m[2] ? +m[2] : 0, ap = m[3] ? m[3][0].toLowerCase() : '';
+    if (ap === 'p' && h < 12) h += 12;
+    if (ap === 'a' && h === 12) h = 0;
+    if (h > 23 || min > 59) return null;
+    return pad2(h) + ':' + pad2(min);
+  }
+  function parseDateParam(v) {
+    if (!v) return null;
+    var m = String(v).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    var mo = +m[2], da = +m[3];
+    if (mo < 1 || mo > 12 || da < 1 || da > 31) return null;
+    return m[0];
+  }
+  // Mirror the current selection into the address bar so the link is always
+  // copyable, and feeds Copy link.
+  function shareUrl() {
+    var qs = 'date=' + encodeURIComponent(dateEl.value) +
+      '&start=' + encodeURIComponent(startEl.value) +
+      '&end=' + encodeURIComponent(endEl.value);
+    return location.origin + location.pathname + '?' + qs;
+  }
+  function syncUrl() {
+    try { history.replaceState(null, '', shareUrl()); } catch (e) { /* ignore */ }
+  }
+
+  function load() {
+    var date = dateEl.value;
+    if (!date) { setStatus('Pick a rental day to see the forecast.', 'info'); return; }
+    var s = timeToDec(startEl.value || '09:00'), e = timeToDec(endEl.value || '17:00');
+    if (e <= s) { setStatus('Your end time needs to be after your start time.', 'warn'); return; }
+    WIN_START = s; WIN_END = e;
+    syncUrl(); // keep the address bar shareable
+
+    setStatus('Pulling the live numbers for ' + date + '...', 'info');
+    cardEl.classList.add('is-loading');
+
+    var errors = [];
+    Promise.allSettled([getJson(fUrl(date)), getJson(mUrl(date)), getJson(tUrl(date))])
+      .then(function (res) {
+        var fc = res[0].status === 'fulfilled' ? res[0].value : null;
+        var mar = res[1].status === 'fulfilled' ? res[1].value : null;
+        var tide = res[2].status === 'fulfilled' ? res[2].value : null;
+        if (res[0].status === 'rejected') errors.push('forecast: ' + res[0].reason.message);
+        if (res[1].status === 'rejected') errors.push('marine: ' + res[1].reason.message);
+        if (res[2].status === 'rejected') errors.push('tides: ' + res[2].reason.message);
+        // NOAA returns {error:{message}} with HTTP 200 when a station/date has no data
+        if (tide && tide.error) { errors.push('tides: ' + tide.error.message); tide = null; }
+
+        var f;
+        try { f = build(date, fc, mar, tide, errors); }
+        catch (err) {
+          cardEl.classList.remove('is-loading');
+          cardEl.classList.add('is-empty');
+          setStatus('Could not build a card. ' + err.message, 'warn');
+          return;
+        }
+        render(f);
+        cardEl.classList.remove('is-loading', 'is-empty');
+
+        var note = 'Live for <b>' + f.date.dow + ', ' + f.date.mo + ' ' + f.date.num + '</b>. Fetched ' + f.updated + '.';
+        if (errors.length) note += ' <span class="fc-status-warn">Some data was unavailable: ' + errors.join('; ') + '. Those fields are left off, not guessed.</span>';
+        setStatus(note, errors.length ? 'warn' : 'ok');
+      });
+  }
+
+  // Copy link: hands Carlos a ready-to-send URL for the current selection.
+  var copyEl = document.getElementById('fc-copy');
+  copyEl.addEventListener('click', function () {
+    var url = shareUrl();
+    var done = function () { copyEl.textContent = 'Copied!'; setTimeout(function () { copyEl.textContent = 'Copy link'; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () { window.prompt('Copy this link:', url); });
+    } else { window.prompt('Copy this link:', url); }
+  });
+
+  // init: defaults, then override from any ?date/?start/?end in the link
+  dateEl.min = shiftYmd(etToday(), -1);
+  dateEl.max = shiftYmd(etToday(), 15); // Open-Meteo model horizon
+  dateEl.value = etToday();
+
+  var params = new URLSearchParams(location.search);
+  var qDate = parseDateParam(params.get('date'));
+  var qStart = parseTimeParam(params.get('start'));
+  var qEnd = parseTimeParam(params.get('end'));
+  if (qDate) {
+    if (qDate < dateEl.min) dateEl.min = qDate;   // allow a shared link outside the default range
+    if (qDate > dateEl.max) dateEl.max = qDate;
+    dateEl.value = qDate;
+  }
+  if (qStart) startEl.value = qStart;
+  if (qEnd) endEl.value = qEnd;
+
+  formEl.addEventListener('submit', function (ev) { ev.preventDefault(); load(); });
+  [dateEl, startEl, endEl].forEach(function (el) { el.addEventListener('change', load); });
+  load();
+})();
+</script>
+
+<style is:global>
+  /* ===== Forecast page chrome ===== */
+  #forecast-app { background-color: var(--color-surface); padding-bottom: clamp(3rem, 2rem + 4vw, 5rem); }
+  .fc-topnav { background-color: var(--color-ink); }
+  .fc-topnav__inner { display: flex; align-items: center; justify-content: space-between; padding-block: 0.75rem; }
+  .fc-topnav__inner img { height: 44px; width: auto; }
+  .fc-topnav__back { color: var(--color-white); font-weight: 600; font-size: 0.9375rem; }
+  .fc-topnav__back:hover { color: var(--color-sun); }
+
+  .fc-main { padding-top: clamp(2rem, 1.5rem + 3vw, 3.5rem); }
+  .fc-eyebrow { color: var(--color-azure-ink); margin-bottom: 0.75rem; }
+  .fc-lede { margin-top: 1rem; max-width: 60ch; color: var(--color-ink); font-size: 1.0625rem; }
+
+  /* Controls */
+  .fc-controls {
+    margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+    background: var(--color-white); border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent);
+    border-radius: var(--radius-lg); padding: 1.25rem 1.375rem; box-shadow: var(--shadow-sm);
+  }
+  .fc-field { display: flex; flex-direction: column; gap: 0.375rem; }
+  .fc-field label { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-slate); }
+  .fc-field input {
+    font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--color-ink);
+    padding: 0.625rem 0.75rem; border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 32%, transparent); background: var(--color-white);
+    min-height: 44px;
+  }
+  .fc-field input:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--color-azure); }
+  .fc-go { min-height: 44px; }
+  .fc-copy { min-height: 44px; }
+  .fc-hint { margin-top: 0.75rem; font-size: 0.875rem; color: var(--color-slate); }
+  .fc-hint b { color: var(--color-azure-ink); font-weight: 600; }
+
+  /* Status line */
+  .fc-status { margin-top: 1.25rem; font-size: 0.9375rem; line-height: 1.5; color: var(--color-slate); min-height: 1.5rem; }
+  .fc-status b { color: var(--color-ink); }
+  .fc-status--warn { color: var(--color-ink); }
+  .fc-status-warn { display: block; margin-top: 0.25rem; color: #9a5a00; }
+
+  /* Card frame + loading/empty states */
+  .fc-cardwrap { margin-top: 1.25rem; overflow-x: auto; }
+  .fc-card {
+    width: 1080px; max-width: 100%; background: var(--color-white); position: relative;
+    padding: clamp(22px, 1rem + 2vw, 44px) clamp(20px, 1rem + 2vw, 46px) 34px; border-radius: 28px;
+    box-shadow: var(--shadow-lg); border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent);
+    transition: opacity 0.3s ease;
+  }
+  .fc-card.is-loading { opacity: 0.45; }
+  .fc-card.is-loading .fc-inner::after {
+    content: 'Loading the live forecast...'; position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; color: var(--color-slate);
+  }
+  .fc-card.is-empty .fc-inner { min-height: 160px; }
+  .fc-card.is-empty .fc-inner::after {
+    content: 'No card for this day yet.'; position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; color: var(--color-slate);
+  }
+  .fc-inner { position: relative; min-height: 120px; }
+
+  .fc-sources { margin-top: 1.5rem; max-width: 70ch; font-size: 0.875rem; line-height: 1.55; color: var(--color-slate); }
+  .fc-sources a { color: var(--color-azure-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ===== Card internals (ported from the standalone card, namespaced fc-) ===== */
+  .fc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; }
+  .fc-head-left { min-width: 0; }
+  .fc-logo { height: 58px; width: auto; display: block; margin-bottom: 16px; }
+  .fc-eyebrow2 { font-weight: 600; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-azure-ink); }
+  .fc-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 4vw, 50px); line-height: 1.1; letter-spacing: -0.025em; margin: 8px 0 7px; color: var(--color-ink); }
+  .fc-subtitle { font-size: 16px; color: var(--color-slate); font-weight: 500; }
+  .fc-subtitle b { color: var(--color-ink); font-weight: 600; }
+  .fc-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; flex-shrink: 0; }
+  .fc-datebox { background: radial-gradient(130% 130% at 20% 10%, #0a3a78, #002454); color: var(--color-white); text-align: center; padding: 14px 22px 16px; border-radius: 18px; min-width: 132px; box-shadow: var(--shadow-md); }
+  .fc-dow { font-weight: 600; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
+  .fc-dnum { font-family: var(--font-display); font-weight: 800; font-size: 46px; line-height: 0.95; margin-top: 2px; }
+  .fc-dmo { font-weight: 500; font-size: 13px; letter-spacing: 0.06em; margin-top: 3px; opacity: 0.85; }
+  .fc-badge { display: inline-flex; align-items: center; gap: 9px; background: var(--color-sun); color: var(--color-ink); font-family: var(--font-display); font-weight: 800; font-size: 18px; padding: 11px 20px; border-radius: 999px; white-space: nowrap; box-shadow: 0 6px 18px rgba(252, 216, 12, 0.35); }
+  .fc-badge--watch { background: #ffe88a; }
+  .fc-badge--caution { background: var(--color-white); color: var(--color-ink); border: 2px solid #e8a13c; box-shadow: 0 6px 18px rgba(232, 161, 60, 0.25); }
+  .fc-badge svg { flex-shrink: 0; }
+
+  .fc-window { margin-top: 24px; display: flex; align-items: center; gap: 26px; background: color-mix(in srgb, var(--color-sun) 16%, var(--color-white)); border: 1px solid color-mix(in srgb, var(--color-sun) 55%, transparent); border-radius: 18px; padding: 18px 24px; }
+  .fc-wleft { flex-shrink: 0; padding-right: 26px; border-right: 1px solid color-mix(in srgb, var(--color-ink) 14%, transparent); }
+  .fc-wlabel { font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-slate); }
+  .fc-wtime { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1.05; color: var(--color-ink); white-space: nowrap; margin-top: 3px; }
+  .fc-wnote { flex: 1; font-size: 15.5px; line-height: 1.5; color: var(--color-ink); }
+  .fc-wnote b { font-weight: 700; }
+
+  .fc-tiles { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .fc-tile { background: var(--color-white); border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent); border-radius: 18px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; box-shadow: 0 1px 2px rgba(0, 36, 84, 0.05); }
+  .fc-ic { flex-shrink: 0; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--color-azure) 12%, var(--color-white)); }
+  .fc-tbody { flex: 1; min-width: 0; }
+  .fc-tlabel { font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-slate); }
+  .fc-tval { font-family: var(--font-display); font-weight: 800; font-size: 36px; line-height: 1; margin: 5px 0; color: var(--color-ink); white-space: nowrap; letter-spacing: -0.02em; }
+  .fc-tval .fc-u { font-size: 16px; font-weight: 700; color: var(--color-slate); }
+  .fc-tval .fc-period { display: inline-flex; align-items: baseline; gap: 6px; vertical-align: middle; margin-left: 9px; font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--color-azure-ink); border-left: 1px solid color-mix(in srgb, var(--color-slate) 30%, transparent); padding-left: 10px; letter-spacing: 0; }
+  .fc-tval .fc-period em { font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-slate); }
+  .fc-tsub { font-size: 13.5px; line-height: 1.4; color: var(--color-slate); }
+  .fc-tsub b { color: var(--color-ink); font-weight: 600; }
+
+  .fc-panel { margin-top: 16px; background: var(--color-white); border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent); border-radius: 18px; padding: 16px 22px 14px; box-shadow: 0 1px 2px rgba(0, 36, 84, 0.05); }
+  .fc-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 8px; }
+  .fc-panel-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--color-ink); }
+  .fc-panel-title svg { flex-shrink: 0; }
+  .fc-panel-tag { font-size: 14px; color: var(--color-slate); font-weight: 500; white-space: nowrap; }
+  .fc-rain-svg { width: 100%; height: 150px; display: block; }
+  .fc-rs-note { margin-top: 8px; font-size: 13.5px; line-height: 1.45; color: var(--color-slate); }
+  .fc-rs-note b { color: var(--color-azure-ink); font-weight: 700; }
+  .fc-tide-svg { width: 100%; height: 230px; display: block; }
+  .fc-tide-events { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 10px; border-top: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent); }
+  .fc-tev { padding: 11px 6px 2px; text-align: center; border-right: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent); }
+  .fc-tev:last-child { border-right: none; }
+  .fc-tk { font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .fc-tk.high { color: var(--color-azure-ink); }
+  .fc-tk.low { color: var(--color-slate); }
+  .fc-tf { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1; margin: 4px 0 2px; color: var(--color-ink); }
+  .fc-tt { font-size: 12.5px; color: var(--color-slate); font-weight: 500; }
+
+  .fc-sun { margin-top: 16px; display: flex; border-radius: 18px; overflow: hidden; background: radial-gradient(130% 130% at 20% 10%, #0a3a78, #002454); color: var(--color-white); box-shadow: var(--shadow-md); }
+  .fc-sblk { flex: 1; display: flex; align-items: center; gap: 14px; padding: 16px 24px; }
+  .fc-sblk + .fc-sblk { border-left: 1px solid rgba(255, 255, 255, 0.18); }
+  .fc-sic { width: 34px; height: 34px; flex-shrink: 0; }
+  .fc-slabel { font-weight: 600; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+  .fc-sval { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1; margin-top: 2px; white-space: nowrap; }
+
+  .fc-foot { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .fc-fl { font-size: 12.5px; color: var(--color-slate); font-weight: 500; }
+  .fc-fl span { text-transform: uppercase; letter-spacing: 0.1em; font-size: 10.5px; font-weight: 600; opacity: 0.85; }
+  .fc-fl b { color: var(--color-ink); font-weight: 700; }
+  .fc-brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--color-azure-ink); }
+
+  /* Phone: stack the header + window, keep the card readable */
+  @media (max-width: 720px) {
+    .fc-head { flex-direction: column; gap: 16px; }
+    .fc-head-right { align-items: flex-start; flex-direction: row; gap: 12px; flex-wrap: wrap; }
+    .fc-window { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .fc-wleft { border-right: none; padding-right: 0; }
+    .fc-tiles { grid-template-columns: 1fr; }
+  }
+</style>

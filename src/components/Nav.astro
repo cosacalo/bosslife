@@ -15,6 +15,9 @@ const links = [
   { href: `${root}#about`, label: 'Our story' },
   { href: `${root}#fleet`, label: 'Fleet' },
   { href: `${root}#why`, label: 'How it works' },
+  // Forecast is a standalone page, so its link is always an absolute path
+  // (works from the home page and from unit detail pages alike).
+  { href: `${base}forecast`, label: 'Forecast' },
   { href: `${root}#contact`, label: 'Contact' },
 ];
 const homeHref = onDetail ? base : '#top';

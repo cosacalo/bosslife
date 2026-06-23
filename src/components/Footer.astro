@@ -8,10 +8,11 @@ const homeHref = base; // root
 const year = new Date().getFullYear(); // rendered at build time (static)
 
 const links = [
-  { href: '#about', label: 'Our story' },
-  { href: '#fleet', label: 'Fleet' },
-  { href: '#why', label: 'How it works' },
-  { href: '#contact', label: 'Contact' },
+  { href: homeHref + '#about', label: 'Our story' },
+  { href: homeHref + '#fleet', label: 'Fleet' },
+  { href: homeHref + '#why', label: 'How it works' },
+  { href: base + 'forecast', label: 'Forecast' },
+  { href: homeHref + '#contact', label: 'Contact' },
 ];
 ---
 
