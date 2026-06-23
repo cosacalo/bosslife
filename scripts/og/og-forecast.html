@@ -1,60 +1,433 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Boss Life Rentals · Boating Forecast</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
 <style>
-  @font-face {
-    font-family: 'Bricolage';
-    src: url('../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2') format('woff2');
-    font-weight: 200 800; font-display: block;
-  }
-  @font-face {
-    font-family: 'Hanken';
-    src: url('../../node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-wght-normal.woff2') format('woff2');
-    font-weight: 100 900; font-display: block;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 1200px; height: 630px; }
-  .og {
-    position: relative; width: 1200px; height: 630px; overflow: hidden;
-    background: radial-gradient(120% 130% at 18% 30%, #0a3a78 0%, #002454 55%, #001633 100%);
-    -webkit-font-smoothing: antialiased;
-  }
-  .band { position: absolute; top: 0; right: 0; width: 452px; height: 630px; }
-  .band img { width: 100%; height: 100%; object-fit: cover; object-position: 52% 42%; display: block;
-    filter: saturate(0.92) contrast(1.05) brightness(0.96); }
-  .band__grade { position: absolute; inset: 0;
-    background: linear-gradient(115deg, rgba(0,36,84,0.4) 0%, rgba(0,36,84,0.08) 42%, rgba(0,36,84,0) 100%); }
-  .band__feather { position: absolute; inset: 0 auto 0 0; width: 200px;
-    background: linear-gradient(to right, #002454 0%, rgba(0,36,84,0.6) 42%, rgba(0,36,84,0) 100%); }
-  .band__seam { position: absolute; top: 0; left: -22px; width: 48px; height: 100%;
-    background: linear-gradient(to right, rgba(12,120,228,0) 0%, rgba(12,120,228,0.5) 50%, rgba(12,120,228,0) 100%); }
-  .zone { position: absolute; left: 78px; top: 0; width: 650px; height: 630px;
-    display: flex; flex-direction: column; justify-content: center; padding-bottom: 78px; }
-  .eyebrow { font-family: 'Hanken', sans-serif; font-weight: 600; font-size: 21px;
-    letter-spacing: 0.2em; text-transform: uppercase; color: #0C78E4; margin-bottom: 24px; }
-  .headline { font-family: 'Bricolage', sans-serif; font-weight: 800; font-size: 94px;
-    line-height: 0.95; letter-spacing: -0.022em; color: #fff; }
-  .headline .p { color: #FCD80C; }
-  .sub { font-family: 'Hanken', sans-serif; font-weight: 600; font-size: 25px;
-    color: rgba(255,255,255,0.92); margin-top: 30px; letter-spacing: 0.01em; }
-  .logo { position: absolute; left: 78px; bottom: 48px; width: 152px; height: auto; display: block; }
+:root{
+  --ink:#002454;          /* navy */
+  --surface:#F2F8FE;      /* sky surface */
+  --azure:#0C78E4;
+  --azure-ink:#0a63c4;
+  --sun:#FCD80C;
+  --slate:#5B708A;
+  --white:#FFFFFF;
+  --line:color-mix(in srgb,var(--slate) 18%,transparent);
+  --line-strong:color-mix(in srgb,var(--slate) 30%,transparent);
+  --shadow:0 1px 2px rgba(0,36,84,.06),0 10px 30px rgba(0,36,84,.10);
+  --display:'Bricolage Grotesque',sans-serif;
+  --body:'Hanken Grotesk',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--surface);font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased;width:1200px;height:630px;overflow:hidden;}
+
+.stage{height:630px;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:22px 0 0;}
+.scaler{transform-origin:top center;transform:scale(0.78);}
+
+/* ============ CARD ============ */
+.card{
+  width:1080px;background:var(--white);position:relative;
+  padding:44px 46px 34px;border-radius:28px;
+  box-shadow:var(--shadow);border:1px solid var(--line);
+}
+
+/* ---- HEADER ---- */
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;}
+.head-left{min-width:0;}
+.logo{height:62px;width:auto;display:block;margin-bottom:16px;}
+.eyebrow{font-weight:600;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--azure-ink);}
+.title{font-family:var(--display);font-weight:800;font-size:50px;line-height:1.1;letter-spacing:-.025em;margin:8px 0 7px;color:var(--ink);}
+.subtitle{font-size:16px;color:var(--slate);font-weight:500;}
+.subtitle b{color:var(--ink);font-weight:600;}
+
+.head-right{display:flex;flex-direction:column;align-items:flex-end;gap:14px;flex-shrink:0;}
+.datebox{
+  background:radial-gradient(130% 130% at 20% 10%,#0a3a78,#002454);color:var(--white);
+  text-align:center;padding:14px 22px 16px;border-radius:18px;min-width:148px;box-shadow:var(--shadow);
+}
+.datebox .dow{font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;}
+.datebox .dnum{font-family:var(--display);font-weight:800;font-size:46px;line-height:.95;margin-top:2px;}
+.datebox .dmo{font-weight:500;font-size:13px;letter-spacing:.06em;margin-top:3px;opacity:.85;}
+
+.badge{
+  display:inline-flex;align-items:center;gap:9px;background:var(--sun);color:var(--ink);
+  font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.01em;
+  padding:11px 20px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(252,216,12,.35);
+}
+.badge svg{flex-shrink:0;}
+
+/* ---- TRIP WINDOW BANNER ---- */
+.window{
+  margin-top:24px;display:flex;align-items:center;gap:26px;
+  background:color-mix(in srgb,var(--sun) 16%,var(--white));
+  border:1px solid color-mix(in srgb,var(--sun) 55%,transparent);
+  border-radius:18px;padding:18px 24px;
+}
+.window .wleft{flex-shrink:0;padding-right:26px;border-right:1px solid color-mix(in srgb,var(--ink) 14%,transparent);}
+.window .wlabel{font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);}
+.window .wtime{font-family:var(--display);font-weight:800;font-size:32px;line-height:1.05;color:var(--ink);white-space:nowrap;margin-top:3px;}
+.window .wnote{flex:1;font-size:15.5px;line-height:1.5;color:var(--ink);}
+.window .wnote b{font-weight:700;}
+
+/* ---- METRIC TILES ---- */
+.tiles{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.tile{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:18px 18px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 1px 2px rgba(0,36,84,.05);}
+.tile .ic{flex-shrink:0;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--azure) 12%,var(--white));}
+.tile .body{flex:1;min-width:0;}
+.tile .tlabel{font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);}
+.tile .tval{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;margin:5px 0 5px;color:var(--ink);white-space:nowrap;letter-spacing:-.02em;}
+.tile .tval .u{font-size:17px;font-weight:700;color:var(--slate);}
+.tile .tval .period{
+  display:inline-flex;align-items:baseline;gap:6px;vertical-align:middle;margin-left:9px;
+  font-family:var(--body);font-size:13px;font-weight:700;color:var(--azure-ink);
+  border-left:1px solid var(--line-strong);padding-left:10px;letter-spacing:0;
+}
+.tile .tval .period em{font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);}
+.tile .tsub{font-size:13.5px;line-height:1.4;color:var(--slate);}
+.tile .tsub b{color:var(--ink);font-weight:600;}
+
+/* ---- SHARED PANEL (rain + tide) ---- */
+.panel{margin-top:16px;background:var(--white);border:1px solid var(--line);border-radius:18px;padding:16px 22px 14px;box-shadow:0 1px 2px rgba(0,36,84,.05);}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px;}
+.panel-title{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:16px;color:var(--ink);}
+.panel-title svg{flex-shrink:0;}
+.panel-tag{font-size:14px;color:var(--slate);font-weight:500;white-space:nowrap;}
+.rain-svg{width:100%;height:150px;display:block;}
+.rs-note{margin-top:8px;font-size:13.5px;line-height:1.45;color:var(--slate);}
+.rs-note b{color:var(--azure-ink);font-weight:700;}
+
+.tide-svg{width:100%;height:230px;display:block;}
+.tide-events{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:10px;border-top:1px solid var(--line);}
+.tev{padding:11px 6px 2px;text-align:center;border-right:1px solid var(--line);}
+.tev:last-child{border-right:none;}
+.tev .tk{font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;}
+.tev .tk.high{color:var(--azure-ink);}
+.tev .tk.low{color:var(--slate);}
+.tev .tf{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;margin:4px 0 2px;color:var(--ink);}
+.tev .tt{font-size:12.5px;color:var(--slate);font-weight:500;}
+
+/* ---- SUN STRIP ---- */
+.sun{margin-top:16px;display:flex;border-radius:18px;overflow:hidden;background:radial-gradient(130% 130% at 20% 10%,#0a3a78,#002454);color:var(--white);box-shadow:var(--shadow);}
+.sun .sblk{flex:1;display:flex;align-items:center;gap:14px;padding:16px 24px;}
+.sun .sblk+.sblk{border-left:1px solid rgba(255,255,255,.18);}
+.sun .sic{width:34px;height:34px;flex-shrink:0;}
+.sun .slabel{font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;}
+.sun .sval{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;margin-top:2px;white-space:nowrap;}
+
+/* ---- FOOTER ---- */
+.foot{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+.foot .fl{font-size:12.5px;color:var(--slate);font-weight:500;}
+.foot .fl span{text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;font-weight:600;opacity:.85;}
+.foot .fl b{color:var(--ink);font-weight:700;}
+.foot .brand{font-family:var(--display);font-weight:700;font-size:16px;color:var(--azure-ink);}
+
+.save-hint{position:fixed;top:16px;left:16px;z-index:50;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.06em;color:#fff;background:var(--azure);padding:8px 14px;border-radius:999px;box-shadow:var(--shadow);}
 </style>
 </head>
 <body>
-  <div class="og">
-    <div class="band">
-      <img src="../../public/jetski-ride-poster.jpg" alt="" />
-      <div class="band__grade"></div>
-      <div class="band__feather"></div>
-      <div class="band__seam"></div>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" fill="#002454"/>
+  <g transform="translate(30,30)">
+    <path d="M2 18 q5 -7 10 0 t10 0 t10 0 t6 0" fill="none" stroke="#FCD80C" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M2 28 q5 -7 10 0 t10 0 t10 0 t6 0" fill="none" stroke="#0C78E4" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="31" cy="4" r="6" fill="#FCD80C"/>
+  </g>
+</svg>
+</template>
+<div class="stage">
+  <div class="scaler" id="scaler">
+    <div class="card" id="card">
+      <div class="inner" id="inner"></div>
     </div>
-    <div class="zone">
-      <div class="eyebrow">Sarasota Boating Forecast</div>
-      <div class="headline">Check the<br/>water<span class="p">.</span></div>
-      <div class="sub">Live wind, seas, tide &amp; sun for your day.</div>
-    </div>
-    <img class="logo" src="../../public/logo.png" alt="Boss Life Rentals" />
   </div>
+</div>
+
+<script>
+/* ============================================================
+   FORECAST DATA.  Edit these values the day before a rental.
+   Everything on the card is generated from this object.
+   ============================================================ */
+const FORECAST = {
+  business: "Boss Life Rentals",
+  area:     "Sarasota, FL",
+  station:  "Siesta Key, Big Sarasota Pass",
+
+  date: { dow:"Monday", num:"22", mo:"June", year:"2026" },
+  window: "9:00 AM to 5:00 PM",
+
+  verdict: { stamp:"Good to go", note:"A calm, glassy day on the water. Light wind, seas a foot or less, and an easy <b>morning high tide</b>. Skies stay <b>mostly dry</b> at the coast. Any stray afternoon storm should hold well inland, east of I-75." },
+
+  wind:  { value:"5-10", unit:"kt", dir:"S→W", note:"Light &amp; glassy. Sea breeze shifts <b>west</b> by afternoon." },
+  seas:  { value:"≤1", unit:"ft", period:"5 sec", periodTag:"glassy", note:"<b>A foot or less</b>, smoothest yet." },
+  rain: {
+    tripMax: 20,
+    dayMax: 20,
+    tag: "Slight afternoon chance, ~20%",
+    note: "Mostly dry on the water. Only a <b>slight (~20%) afternoon chance</b>, and any storms are expected to stay inland, east of I-75.",
+    hourly: [3,3,2,2,2,2,3,3,4,5,5,5,6,8,12,18,20,20,18,15,12,8,5,3],
+  },
+  uv:    { value:"11", unit:"of 11", note:"<b>Extreme</b>. Sunscreen, hat &amp; shade." },
+
+  sun: { rise:"6:36 AM", set:"8:28 PM" },
+
+  tides: [
+    { type:"l", ft:0.12, time:"12:38 AM", t:0.633 },
+    { type:"h", ft:1.20, time:"9:00 AM",  t:9.000 },
+    { type:"l", ft:1.05, time:"12:45 PM", t:12.750 },
+    { type:"h", ft:2.25, time:"6:25 PM",  t:18.417 },
+  ],
+
+  updated: "Jun 22, 2026",
+};
+
+/* ---- trip window in decimal hours (9:00 AM – 5:00 PM) ---- */
+const WIN_START = 9.0, WIN_END = 17.0;
+
+/* ---- brand palette for canvas/SVG ---- */
+const INK="#002454", AZURE="#0C78E4", AZURE_INK="#0a63c4", SLATE="#5B708A",
+      SUN="#FCD80C", WHITE="#FFFFFF", AZURE_LT="#9cc6f2";
+const FONT="'Hanken Grotesk',sans-serif", DISPLAY="'Bricolage Grotesque',sans-serif";
+
+/* ================= ICONS ================= */
+function windIcon(){return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round">
+  <path d="M3 9h11.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 14h15a2.5 2.5 0 1 1-2.5 2.5"/></svg>`;}
+function seaIcon(){return `<svg width="24" height="22" viewBox="0 0 26 22" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round">
+  <path d="M2 7q3-3.2 6 0t6 0 6 0"/><path d="M2 13q3-3.2 6 0t6 0 6 0"/><path d="M2 19q3-3.2 6 0t6 0 6 0"/></svg>`;}
+function cloudRainIcon(){return `<svg width="26" height="23" viewBox="0 0 28 26" fill="none" stroke="${AZURE_INK}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M8.5 16a4.5 4.5 0 0 1-.3-9 6 6 0 0 1 11.3 1.2A4 4 0 0 1 20 16"/>
+  <line x1="9" y1="19" x2="8" y2="22"/><line x1="14" y1="19.5" x2="13" y2="22.5"/><line x1="19" y1="19" x2="18" y2="22"/></svg>`;}
+function tideIcon(){return `<svg width="24" height="22" viewBox="0 0 26 22" fill="none" stroke="${AZURE_INK}" stroke-width="1.8" stroke-linecap="round">
+  <path d="M2 15q3.5-7 6.5 0t6.5 0 6.5 0"/><line x1="2" y1="19.5" x2="23" y2="19.5"/></svg>`;}
+function uvIcon(){return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round">
+  <circle cx="12" cy="12" r="4.2"/>
+  ${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;const x1=12+Math.cos(r)*7,y1=12+Math.sin(r)*7,x2=12+Math.cos(r)*9.2,y2=12+Math.sin(r)*9.2;return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;}).join("")}</svg>`;}
+function checkIcon(){return `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5l3.5 3.5L15 5"/></svg>`;}
+function sunriseIcon(c){return `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round">
+  <line x1="5" y1="25" x2="29" y2="25"/><path d="M11 25a6 6 0 0 1 12 0"/>
+  <line x1="17" y1="8" x2="17" y2="13"/><line x1="8.5" y1="12" x2="11.5" y2="14.5"/><line x1="25.5" y1="12" x2="22.5" y2="14.5"/>
+  <path d="M13 20l4-4 4 4"/></svg>`;}
+function sunsetIcon(c){return `<svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round">
+  <line x1="5" y1="25" x2="29" y2="25"/><path d="M11 25a6 6 0 0 1 12 0"/>
+  <line x1="17" y1="13" x2="17" y2="8"/><line x1="8.5" y1="12" x2="11.5" y2="14.5"/><line x1="25.5" y1="12" x2="22.5" y2="14.5"/>
+  <path d="M13 16l4 4 4-4"/></svg>`;}
+
+/* ================= TIDE CURVE ================= */
+function buildTideSVG(){
+  const W=1000, H=230, padT=34, padB=40, padL=10, padR=10;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const ex=[
+    {t:-5.6, v:2.21},
+    ...FORECAST.tides.map(p=>({t:p.t, v:p.ft})),
+    {t:25.1, v:0.15},
+  ];
+  const minV=-0.6, maxV=2.4;
+  const x=t=>padL + (t/24)*plotW;
+  const y=v=>padT + (1-(v-minV)/(maxV-minV))*plotH;
+  function val(t){
+    for(let i=0;i<ex.length-1;i++){
+      if(t>=ex[i].t && t<=ex[i+1].t){
+        const f=(1-Math.cos(Math.PI*(t-ex[i].t)/(ex[i+1].t-ex[i].t)))/2;
+        return ex[i].v+(ex[i+1].v-ex[i].v)*f;
+      }
+    }
+    return ex[0].v;
+  }
+  let pts=[];
+  for(let t=0;t<=24.001;t+=0.2){ pts.push([x(t), y(val(t))]); }
+  const line = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area = line+` L ${x(24).toFixed(1)} ${(padT+plotH).toFixed(1)} L ${padL.toFixed(1)} ${(padT+plotH).toFixed(1)} Z`;
+  const baseY=padT+plotH;
+  const wx1=x(WIN_START), wx2=x(WIN_END);
+  const ticks=[0,6,12,18,24];
+  const tickLabels={0:"12A",6:"6A",12:"12P",18:"6P",24:"12A"};
+
+  const markers=FORECAST.tides.map(p=>{
+    const px=x(p.t), py=y(p.ft);
+    const high=p.type==="h";
+    const col=high?AZURE:SLATE;
+    const lblY = high? py-14 : py+24;
+    return `
+      <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="6" fill="${WHITE}" stroke="${col}" stroke-width="2.5"/>
+      <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.2" fill="${col}"/>
+      <text x="${px.toFixed(1)}" y="${lblY.toFixed(1)}" text-anchor="middle" font-family="${FONT}" font-size="13" font-weight="700" fill="${INK}">${p.ft.toFixed(2)} ft</text>
+    `;
+  }).join("");
+
+  const sunTick=(t,label)=>{
+    const px=x(t);
+    return `<line x1="${px.toFixed(1)}" y1="${baseY.toFixed(1)}" x2="${px.toFixed(1)}" y2="${(baseY+6).toFixed(1)}" stroke="${SLATE}" stroke-width="1"/>
+      <text x="${px.toFixed(1)}" y="${(baseY+22).toFixed(1)}" text-anchor="middle" font-family="${FONT}" font-size="11.5" font-weight="500" fill="${SLATE}">${label}</text>`;
+  };
+
+  return `<svg class="tide-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="seaFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${AZURE}" stop-opacity="0.32"/>
+        <stop offset="1" stop-color="${AZURE}" stop-opacity="0.05"/>
+      </linearGradient>
+    </defs>
+    <rect x="${wx1.toFixed(1)}" y="${padT.toFixed(1)}" width="${(wx2-wx1).toFixed(1)}" height="${plotH.toFixed(1)}" fill="${SUN}" opacity="0.22" rx="4"/>
+    <line x1="${wx1.toFixed(1)}" y1="${padT}" x2="${wx1.toFixed(1)}" y2="${baseY}" stroke="${SUN}" stroke-width="2" stroke-dasharray="3 3"/>
+    <line x1="${wx2.toFixed(1)}" y1="${padT}" x2="${wx2.toFixed(1)}" y2="${baseY}" stroke="${SUN}" stroke-width="2" stroke-dasharray="3 3"/>
+    <text x="${((wx1+wx2)/2).toFixed(1)}" y="${(padT-13).toFixed(1)}" text-anchor="middle" font-family="${DISPLAY}" font-size="11.5" font-weight="800" letter-spacing="1.2" fill="${AZURE_INK}">YOUR TRIP</text>
+    ${ticks.map(t=>`<line x1="${x(t).toFixed(1)}" y1="${padT}" x2="${x(t).toFixed(1)}" y2="${baseY}" stroke="${INK}" stroke-opacity="0.06" stroke-width="1"/>`).join("")}
+    <path d="${area}" fill="url(#seaFill)"/>
+    <path d="${line}" fill="none" stroke="${AZURE}" stroke-width="3" stroke-linejoin="round"/>
+    <line x1="${padL}" y1="${baseY}" x2="${W-padR}" y2="${baseY}" stroke="${INK}" stroke-opacity="0.5" stroke-width="1.2"/>
+    ${ticks.map(t=>sunTick(t,tickLabels[t])).join("")}
+    ${markers}
+  </svg>`;
+}
+
+/* ================= RAIN TIMELINE ================= */
+function buildRainSVG(){
+  const W=1000, H=150, padT=16, padB=24, padL=10, padR=10;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const hourly=FORECAST.rain.hourly;
+  const x=t=>padL+(t/24)*plotW;
+  const base=padT+plotH, yTop=padT;
+  const barW=(plotW/24)*0.62;
+  const wx1=x(WIN_START), wx2=x(WIN_END);
+  const y50=base-0.5*plotH;
+  const ticks=[0,6,12,18,24], lbl={0:"12A",6:"6A",12:"12P",18:"6P",24:"12A"};
+
+  let barLabels="";
+  const bars=hourly.map((p,h)=>{
+    const cx=x(h+0.5);
+    const bh=Math.max(2,(p/100)*plotH);
+    const inWin=(h+0.5)>=WIN_START && (h+0.5)<=WIN_END;
+    const col=inWin?AZURE:AZURE_LT;
+    if(inWin){
+      const ly=Math.min(base-bh-7, base-14);
+      barLabels+=`<text x="${cx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-family="${FONT}" font-size="13" font-weight="700" fill="${AZURE_INK}">${p}%</text>`;
+    }
+    return `<rect x="${(cx-barW/2).toFixed(1)}" y="${(base-bh).toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${col}"/>`;
+  }).join("");
+
+  return `<svg class="rain-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <rect x="${wx1.toFixed(1)}" y="${yTop}" width="${(wx2-wx1).toFixed(1)}" height="${plotH.toFixed(1)}" fill="${SUN}" opacity="0.22" rx="4"/>
+    <line x1="${wx1.toFixed(1)}" y1="${yTop}" x2="${wx1.toFixed(1)}" y2="${base}" stroke="${SUN}" stroke-width="2" stroke-dasharray="3 3"/>
+    <line x1="${wx2.toFixed(1)}" y1="${yTop}" x2="${wx2.toFixed(1)}" y2="${base}" stroke="${SUN}" stroke-width="2" stroke-dasharray="3 3"/>
+    <line x1="${padL}" y1="${y50.toFixed(1)}" x2="${W-padR}" y2="${y50.toFixed(1)}" stroke="${INK}" stroke-opacity="0.1" stroke-dasharray="3 4"/>
+    <text x="${padL+2}" y="${(yTop+9).toFixed(1)}" font-family="${FONT}" font-size="10.5" font-weight="500" fill="${SLATE}">100%</text>
+    <text x="${padL+2}" y="${(y50-3).toFixed(1)}" font-family="${FONT}" font-size="10.5" font-weight="500" fill="${SLATE}">50%</text>
+    ${bars}
+    ${barLabels}
+    <line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="${INK}" stroke-opacity="0.5" stroke-width="1.2"/>
+    ${ticks.map(t=>`<line x1="${x(t).toFixed(1)}" y1="${base}" x2="${x(t).toFixed(1)}" y2="${base+5}" stroke="${SLATE}" stroke-width="1"/><text x="${x(t).toFixed(1)}" y="${(base+18).toFixed(1)}" text-anchor="middle" font-family="${FONT}" font-size="11.5" font-weight="500" fill="${SLATE}">${lbl[t]}</text>`).join("")}
+  </svg>`;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const f=FORECAST;
+  const tideEvents=f.tides.map(p=>{
+    const high=p.type==="h";
+    return `<div class="tev">
+      <div class="tk ${high?'high':'low'}">${high?'High':'Low'} Tide</div>
+      <div class="tf">${p.ft.toFixed(2)}<span style="font-size:14px;color:var(--slate);font-weight:600"> ft</span></div>
+      <div class="tt">${p.time}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("inner").innerHTML = `
+    <div class="head">
+      <div class="head-left">
+        <img class="logo" src="../../public/forecast-logo.png" alt="Boss Life Rentals" />
+        <div class="eyebrow">Boating Forecast</div>
+        <div class="title">${f.date.dow}'s Water</div>
+        <div class="subtitle">${f.area} &nbsp;&middot;&nbsp; Tides at <b>${f.station}</b></div>
+      </div>
+      <div class="head-right">
+        <div class="datebox">
+          <div class="dow">${f.date.dow}</div>
+          <div class="dnum">${f.date.num}</div>
+          <div class="dmo">${f.date.mo} ${f.date.year}</div>
+        </div>
+        <div class="badge">${checkIcon()} ${f.verdict.stamp}</div>
+      </div>
+    </div>
+
+    <div class="window">
+      <div class="wleft">
+        <div class="wlabel">Your rental window</div>
+        <div class="wtime">${f.window}</div>
+      </div>
+      <div class="wnote">${f.verdict.note}</div>
+    </div>
+
+    <div class="tiles">
+      <div class="tile">
+        <div class="ic">${windIcon()}</div>
+        <div class="body">
+          <div class="tlabel">Wind</div>
+          <div class="tval">${f.wind.value}<span class="u"> ${f.wind.unit} ${f.wind.dir}</span></div>
+          <div class="tsub">${f.wind.note}</div>
+        </div>
+      </div>
+      <div class="tile">
+        <div class="ic">${seaIcon()}</div>
+        <div class="body">
+          <div class="tlabel">Seas</div>
+          <div class="tval">${f.seas.value}<span class="u"> ${f.seas.unit}</span><span class="period">${f.seas.period} <em>${f.seas.periodTag}</em></span></div>
+          <div class="tsub">${f.seas.note}</div>
+        </div>
+      </div>
+      <div class="tile">
+        <div class="ic">${uvIcon()}</div>
+        <div class="body">
+          <div class="tlabel">UV index</div>
+          <div class="tval">${f.uv.value}<span class="u"> ${f.uv.unit}</span></div>
+          <div class="tsub">${f.uv.note}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">${cloudRainIcon()}<span>Rain chance by hour</span></div>
+        <div class="panel-tag">${f.rain.tag}</div>
+      </div>
+      ${buildRainSVG()}
+      <div class="rs-note">${f.rain.note}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">${tideIcon()}<span>Tide forecast</span></div>
+        <div class="panel-tag">high at the start, gentle dip midday</div>
+      </div>
+      ${buildTideSVG()}
+      <div class="tide-events">${tideEvents}</div>
+    </div>
+
+    <div class="sun">
+      <div class="sblk">
+        <div class="sic">${sunriseIcon('#FCD80C')}</div>
+        <div><div class="slabel">Sunrise</div><div class="sval">${f.sun.rise}</div></div>
+      </div>
+      <div class="sblk">
+        <div class="sic">${sunsetIcon('#FCD80C')}</div>
+        <div><div class="slabel">Sunset</div><div class="sval">${f.sun.set}</div></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="fl"><span>Updated</span> &nbsp;<b>${f.updated}</b> &nbsp;&middot;&nbsp; Forecast only. Always check conditions before departure.</div>
+      <div class="brand">Boss Life Rentals</div>
+    </div>
+  `;
+}
+render();
+
+// Fixed scale for the 1200x630 OG crop (see CSS .scaler); no viewport fitting.
+</script>
 </body>
 </html>
