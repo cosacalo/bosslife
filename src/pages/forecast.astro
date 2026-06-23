@@ -60,7 +60,7 @@ const homeHref = base;
 
       {/* ---- The card (rendered by JS) ---- */}
       <div class="fc-cardwrap">
-        <div class="fc-card" id="fc-card" aria-live="polite">
+        <div class="fc-card" id="fc-card" aria-live="polite" data-logo={logo}>
           <div class="fc-inner" id="fc-inner"></div>
         </div>
       </div>
@@ -79,26 +79,18 @@ const homeHref = base;
   <Footer />
 </Base>
 
-<script is:inline define:vars={{ LOGO_URL: logo }}>
+<script>
+import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '../lib/boating-forecast.js';
 /* ============================================================================
-   Boss Life — live boating forecast (Option A: fully automatic).
-   Fetches three CORS-open public sources in the browser, transforms them into
-   the card shape, derives labels from conservative thresholds, and renders.
-   No backend, no API keys. Static-site safe.
-
-   Safety stance carried over from the source docs: this is a live pass-through.
-   We transcribe real numbers only. If a source fails or has no data for the
-   chosen day, we say so and leave that field off, never a guess.
+   Boss Life — live boating forecast page (Option A: fully automatic).
+   Data + derivation come from ../lib/boating-forecast.js (shared with the
+   homepage "Today on the bay" band). This file owns only the card rendering:
+   the SVG charts, icons, DOM, and the date/window controls.
    ============================================================================ */
 (function () {
   'use strict';
 
-  /* ---- Fixed launch point (Sarasota / Centennial Park ramp area) ---- */
-  var LAT = 27.347, LON = -82.548;     // point forecast
-  var MLAT = 27.27, MLON = -82.62;     // just offshore (marine)
-  var STATION = '8726083';             // NOAA "Sarasota" tides
-  var AREA = 'Sarasota, FL';
-  var STATION_LABEL = 'Sarasota Bay, NOAA #8726083';
+  var LOGO_URL = document.getElementById('fc-card').getAttribute('data-logo');
 
   /* ---- brand palette for the SVGs ---- */
   var INK = '#002454', AZURE = '#0c78e4', AZURE_INK = '#0a63c4', SLATE = '#5b708a',
@@ -108,234 +100,6 @@ const homeHref = base;
 
   /* trip window in decimal hours, set per render */
   var WIN_START = 9.0, WIN_END = 17.0;
-
-  /* ---------------------------------------------------------------- helpers */
-  function pad2(n) { return (n < 10 ? '0' : '') + n; }
-
-  // today's date (YYYY-MM-DD) in America/New_York, regardless of viewer TZ
-  function etToday() {
-    var parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
-    }).formatToParts(new Date());
-    var o = {};
-    parts.forEach(function (p) { o[p.type] = p.value; });
-    return o.year + '-' + o.month + '-' + o.day;
-  }
-
-  function shiftYmd(ymd, delta) {
-    var p = ymd.split('-');
-    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
-    d.setUTCDate(d.getUTCDate() + delta);
-    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
-  }
-
-  // "2026-06-22T06:35" or "2026-06-22 06:35" -> {h, m}
-  function hm(s) { return { h: +s.slice(11, 13), m: +s.slice(14, 16) }; }
-  function decHour(s) { var t = hm(s); return t.h + t.m / 60; }
-  function fmt12(s) {
-    var t = hm(s), h = t.h, m = t.m, ap = h >= 12 ? 'PM' : 'AM';
-    var hh = h % 12; if (hh === 0) hh = 12;
-    return hh + ':' + pad2(m) + ' ' + ap;
-  }
-  function winLabel(start, end) {
-    function f(v) {
-      var h = Math.floor(v), m = Math.round((v - h) * 60), ap = h >= 12 ? 'PM' : 'AM';
-      var hh = h % 12; if (hh === 0) hh = 12;
-      return hh + ':' + pad2(m) + ' ' + ap;
-    }
-    return f(start) + ' to ' + f(end);
-  }
-
-  var DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  function dateParts(ymd) {
-    var p = ymd.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
-    return { dow: DOW[d.getDay()], num: String(+p[2]), mo: MON[+p[1] - 1], year: p[0] };
-  }
-
-  function compass(deg) {
-    var dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-    return dirs[Math.round(deg / 22.5) % 16];
-  }
-
-  function timeToDec(str) { // "09:00" -> 9.0
-    var p = str.split(':'); return (+p[0]) + (+p[1]) / 60;
-  }
-
-  /* ------------------------------------------------------------------ fetch */
-  function fUrl(d) {
-    return 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
-      '&hourly=precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m' +
-      '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
-      '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
-  }
-  function mUrl(d) {
-    return 'https://marine-api.open-meteo.com/v1/marine?latitude=' + MLAT + '&longitude=' + MLON +
-      '&hourly=wave_height,wave_period,wind_wave_height,wind_wave_period' +
-      '&length_unit=imperial&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
-  }
-  function tUrl(d) {
-    var b = shiftYmd(d, -1).replace(/-/g, ''), e = shiftYmd(d, 1).replace(/-/g, '');
-    return 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=' + b +
-      '&end_date=' + e + '&station=' + STATION + '&product=predictions&datum=MLLW' +
-      '&time_zone=lst_ldt&interval=hilo&units=english&format=json&application=BossLifeRentals';
-  }
-  function getJson(url) {
-    // No 'Cache-Control' request header on purpose: it is not CORS-safelisted, so
-    // it would force a preflight that Open-Meteo / NOAA reject (their
-    // access-control-allow-headers do not include cache-control). The fetch
-    // `cache: 'no-store'` option keeps responses fresh without any extra header.
-    return fetch(url, { cache: 'no-store' })
-      .then(function (r) {
-        if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
-        return r.json();
-      });
-  }
-
-  /* -------------------------------------------------------------- transform */
-  // Build the card data object from raw responses. Throws if the core
-  // (forecast) source has no usable data for the day.
-  function build(date, fc, mar, tide, errors) {
-    var f = {
-      area: AREA, station: STATION_LABEL,
-      date: dateParts(date),
-      window: winLabel(WIN_START, WIN_END),
-    };
-
-    if (!fc || !fc.hourly || !fc.hourly.time || !fc.hourly.time.length) {
-      throw new Error('No forecast data for ' + date + ' (it may be outside the 16-day model range).');
-    }
-
-    var H = fc.hourly, D = fc.daily;
-    var times = H.time;
-    // indices inside the rental window (hourly data is on the hour)
-    var win = [];
-    for (var i = 0; i < times.length; i++) {
-      var h = +times[i].slice(11, 13);
-      if (h >= Math.floor(WIN_START) && h <= Math.ceil(WIN_END)) win.push(i);
-    }
-    if (!win.length) win = times.map(function (_, i) { return i; });
-
-    function pick(arr) { return win.map(function (i) { return arr[i]; }).filter(function (v) { return v != null; }); }
-
-    /* ---- wind ---- */
-    var ws = pick(H.wind_speed_10m), wg = pick(H.wind_gusts_10m), wd = pick(H.wind_direction_10m);
-    var wMin = Math.round(Math.min.apply(null, ws)), wMax = Math.round(Math.max.apply(null, ws));
-    var gMax = wg.length ? Math.round(Math.max.apply(null, wg)) : null;
-    var dStart = compass(wd[0]), dEnd = compass(wd[wd.length - 1]);
-    var dir = dStart === dEnd ? dStart : dStart + '→' + dEnd; // arrow only, not an em dash
-    var windNote;
-    if (wMax < 10) windNote = 'Light and glassy.';
-    else if (wMax < 15) windNote = 'Light to moderate.';
-    else if (wMax < 20) windNote = 'Moderate, some chop.';
-    else windNote = 'Breezy, expect a bumpy ride.';
-    if (gMax && gMax >= wMax + 6) windNote += ' Gusts to ' + gMax + ' kt.';
-    f.wind = { value: (wMin === wMax ? String(wMax) : wMin + '–' + wMax), unit: 'kt', dir: dir, note: windNote };
-
-    /* ---- seas (marine) ---- */
-    if (mar && mar.hourly && mar.hourly.wave_height) {
-      var MH = mar.hourly, mt = MH.time, mwin = [];
-      for (var j = 0; j < mt.length; j++) {
-        var mh = +mt[j].slice(11, 13);
-        if (mh >= Math.floor(WIN_START) && mh <= Math.ceil(WIN_END)) mwin.push(j);
-      }
-      if (!mwin.length) mwin = mt.map(function (_, k) { return k; });
-      var wav = mwin.map(function (k) { return MH.wave_height[k]; }).filter(function (v) { return v != null; });
-      var per = mwin.map(function (k) { return MH.wave_period[k]; }).filter(function (v) { return v != null; });
-      if (wav.length) {
-        var maxW = Math.max.apply(null, wav);
-        var avgP = per.length ? Math.round(per.reduce(function (a, b) { return a + b; }, 0) / per.length) : null;
-        var tag, seaNote;
-        if (maxW <= 1) { tag = 'glassy'; seaNote = 'A foot or less. Easy water.'; }
-        else if (maxW <= 2) { tag = 'easy'; seaNote = 'Around one to two feet.'; }
-        else if (maxW <= 3) { tag = 'moderate'; seaNote = 'Two to three feet, a little bumpy.'; }
-        else { tag = 'rough'; seaNote = 'Over three feet. Pick your spots.'; }
-        f.seas = {
-          value: maxW <= 1 ? '≤1' : (Math.round(maxW * 10) / 10).toFixed(1),
-          unit: 'ft', period: avgP != null ? avgP + ' sec' : '', periodTag: tag, note: seaNote,
-          maxW: maxW,
-        };
-      }
-    }
-    if (!f.seas) {
-      errors.push('marine seas unavailable for this day');
-      f.seas = { value: 'n/a', unit: '', period: '', periodTag: '', note: 'Sea-state data was not available for this day.', maxW: null };
-    }
-
-    /* ---- rain ---- */
-    var hourlyRain = [];
-    for (var r = 0; r < 24; r++) hourlyRain.push(H.precipitation_probability[r] == null ? 0 : H.precipitation_probability[r]);
-    var tripMax = Math.max.apply(null, pick(H.precipitation_probability).concat([0]));
-    var dayMax = (D && D.precipitation_probability_max) ? D.precipitation_probability_max[0] : tripMax;
-    var rTag, rNote;
-    if (tripMax < 10) { rTag = 'Dry on the water'; rNote = 'Skies stay dry through your window.'; }
-    else if (tripMax < 30) { rTag = 'Slight chance, ~' + tripMax + '%'; rNote = 'Mostly dry. Only a slight chance near <b>' + tripMax + '%</b> in your window.'; }
-    else if (tripMax < 60) { rTag = 'Scattered showers, ~' + tripMax + '%'; rNote = 'Scattered showers possible, up to about <b>' + tripMax + '%</b> in your window.'; }
-    else { rTag = 'Wet, ~' + tripMax + '%'; rNote = 'A good chance of rain, up to about <b>' + tripMax + '%</b>. Keep an eye on the radar.'; }
-    f.rain = { tripMax: tripMax, dayMax: dayMax, tag: rTag, note: rNote, hourly: hourlyRain };
-
-    /* ---- UV ---- */
-    var uvMax = (D && D.uv_index_max) ? D.uv_index_max[0] : null;
-    if (uvMax != null) {
-      var uvR = Math.round(uvMax), uvCat;
-      if (uvR <= 2) uvCat = '<b>Low.</b> Easy day for the skin.';
-      else if (uvR <= 5) uvCat = '<b>Moderate.</b> Sunscreen if you burn.';
-      else if (uvR <= 7) uvCat = '<b>High.</b> Sunscreen and a hat.';
-      else if (uvR <= 10) uvCat = '<b>Very high.</b> Sunscreen, hat, and shade.';
-      else uvCat = '<b>Extreme.</b> Cover up and reapply often.';
-      f.uv = { value: String(uvR), unit: 'of 11', note: uvCat };
-    } else {
-      f.uv = { value: 'n/a', unit: '', note: 'UV data was not available.' };
-    }
-
-    /* ---- sun ---- */
-    if (D && D.sunrise && D.sunset) {
-      f.sun = { rise: fmt12(D.sunrise[0]), set: fmt12(D.sunset[0]) };
-    } else {
-      f.sun = { rise: 'n/a', set: 'n/a' };
-    }
-
-    /* ---- tides ---- */
-    var dayTides = [], prevAnchor = null, nextAnchor = null;
-    if (tide && tide.predictions && tide.predictions.length) {
-      tide.predictions.forEach(function (p) {
-        var d = p.t.slice(0, 10), high = (p.type === 'H');
-        var ev = { type: high ? 'h' : 'l', ft: parseFloat(p.v), time: fmt12(p.t), t: decHour(p.t), date: d };
-        if (d === date) dayTides.push(ev);
-        else if (d < date) prevAnchor = { t: ev.t - 24, v: ev.ft };           // last before -> negative t
-        else if (d > date && !nextAnchor) nextAnchor = { t: ev.t + 24, v: ev.ft }; // first after -> >24
-      });
-    }
-    f.tides = dayTides;
-    f._tideAnchors = { prev: prevAnchor, next: nextAnchor };
-    if (!dayTides.length) errors.push('tide predictions unavailable for this day');
-
-    /* ---- verdict (conservative, threshold-driven) ---- */
-    var sMax = f.seas.maxW;
-    var caution = (wMax >= 20) || (gMax && gMax >= 25) || (sMax != null && sMax > 3) || (tripMax >= 60);
-    var watch = (wMax >= 15) || (sMax != null && sMax > 2) || (tripMax >= 40);
-    f.verdict = { stamp: caution ? 'Check conditions' : (watch ? 'A bit of chop' : 'Good to go'), level: caution ? 'caution' : (watch ? 'watch' : 'good') };
-
-    // build the verdict note from real pieces, no invented detail
-    var bits = [];
-    bits.push(windNote.replace(/\.$/, '') + ', wind ' + f.wind.value + ' kt ' + dir + '.');
-    if (sMax != null) bits.push('Seas ' + (f.seas.value === '≤1' ? 'a foot or less' : f.seas.value + ' ft') + '.');
-    bits.push(tripMax < 10 ? 'Dry through your window.' : 'Rain chance up to <b>' + tripMax + '%</b>.');
-    // highest water of the day
-    if (dayTides.length) {
-      var hi = dayTides.filter(function (t) { return t.type === 'h'; }).sort(function (a, b) { return b.ft - a.ft; })[0];
-      if (hi) bits.push('Highest water around <b>' + hi.time + '</b>.');
-    }
-    if (D && D.temperature_2m_max) bits.push('Highs near ' + Math.round(D.temperature_2m_max[0]) + '°.');
-    f.verdict.note = bits.join(' ');
-
-    f.updated = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-    }).format(new Date()) + ' ET';
-
-    return f;
-  }
 
   /* -------------------------------------------------------------- SVG: tide */
   function buildTideSVG(f) {
@@ -554,20 +318,11 @@ const homeHref = base;
     setStatus('Pulling the live numbers for ' + date + '...', 'info');
     cardEl.classList.add('is-loading');
 
-    var errors = [];
-    Promise.allSettled([getJson(fUrl(date)), getJson(mUrl(date)), getJson(tUrl(date))])
-      .then(function (res) {
-        var fc = res[0].status === 'fulfilled' ? res[0].value : null;
-        var mar = res[1].status === 'fulfilled' ? res[1].value : null;
-        var tide = res[2].status === 'fulfilled' ? res[2].value : null;
-        if (res[0].status === 'rejected') errors.push('forecast: ' + res[0].reason.message);
-        if (res[1].status === 'rejected') errors.push('marine: ' + res[1].reason.message);
-        if (res[2].status === 'rejected') errors.push('tides: ' + res[2].reason.message);
-        // NOAA returns {error:{message}} with HTTP 200 when a station/date has no data
-        if (tide && tide.error) { errors.push('tides: ' + tide.error.message); tide = null; }
-
+    fetchAll(date)
+      .then(function (raw) {
+        var errors = raw.errors;
         var f;
-        try { f = build(date, fc, mar, tide, errors); }
+        try { f = deriveConditions(date, raw.fc, raw.mar, raw.tide, errors, WIN_START, WIN_END); }
         catch (err) {
           cardEl.classList.remove('is-loading');
           cardEl.classList.add('is-empty');
