@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  /* Brand fonts, loaded straight from the project's node_modules (variable woff2). */
+  @font-face {
+    font-family: 'Bricolage';
+    src: url('../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2') format('woff2');
+    font-weight: 200 800; font-display: block;
+  }
+  @font-face {
+    font-family: 'Hanken';
+    src: url('../../node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-wght-normal.woff2') format('woff2');
+    font-weight: 100 900; font-display: block;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  .og {
+    position: relative; width: 1200px; height: 630px; overflow: hidden;
+    background: radial-gradient(120% 130% at 18% 30%, #0a3a78 0%, #002454 55%, #001633 100%);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Right photo band */
+  .band { position: absolute; top: 0; right: 0; width: 452px; height: 630px; }
+  .band img { width: 100%; height: 100%; object-fit: cover; object-position: 100% 46%; display: block;
+    filter: saturate(0.92) contrast(1.05) brightness(0.96); }
+  .band__grade { position: absolute; inset: 0;
+    background: linear-gradient(115deg, rgba(0,36,84,0.4) 0%, rgba(0,36,84,0.08) 42%, rgba(0,36,84,0) 100%); }
+  .band__feather { position: absolute; inset: 0 auto 0 0; width: 200px;
+    background: linear-gradient(to right, #002454 0%, rgba(0,36,84,0.6) 42%, rgba(0,36,84,0) 100%); }
+  .band__seam { position: absolute; top: 0; left: -22px; width: 48px; height: 100%;
+    background: linear-gradient(to right, rgba(12,120,228,0) 0%, rgba(12,120,228,0.5) 50%, rgba(12,120,228,0) 100%); }
+  /* Left text zone */
+  .zone { position: absolute; left: 78px; top: 0; width: 650px; height: 630px;
+    display: flex; flex-direction: column; justify-content: center; padding-bottom: 78px; }
+  .eyebrow { font-family: 'Hanken', sans-serif; font-weight: 600; font-size: 21px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: #0C78E4; margin-bottom: 24px; }
+  .headline { font-family: 'Bricolage', sans-serif; font-weight: 800; font-size: 94px;
+    line-height: 0.95; letter-spacing: -0.022em; color: #fff; }
+  .headline .p { color: #FCD80C; }
+  .tagline { font-family: 'Hanken', sans-serif; font-weight: 500; font-size: 25px;
+    color: rgba(255,255,255,0.85); margin-top: 30px; }
+  .logo { position: absolute; left: 78px; bottom: 48px; width: 152px; height: auto; display: block; }
+</style>
+</head>
+<body>
+  <div class="og">
+    <div class="band">
+      <img src="../../public/hero-poster.jpg" alt="" />
+      <div class="band__grade"></div>
+      <div class="band__feather"></div>
+      <div class="band__seam"></div>
+    </div>
+    <div class="zone">
+      <div class="eyebrow">Sarasota, Florida</div>
+      <div class="headline">Boats<span class="p">.</span><br/>RVs<span class="p">.</span><br/>Jet&nbsp;Skis<span class="p">.</span></div>
+      <div class="tagline">The life we live, yours for a day.</div>
+    </div>
+    <img class="logo" src="../../public/logo.png" alt="Boss Life Rentals" />
+  </div>
+</body>
+</html>
