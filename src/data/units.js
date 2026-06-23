@@ -253,7 +253,7 @@ export const units = [
         image: '170.jpg',
         power: '170 hp',
         topSpeed: '55 mph',
-        blurb: 'The quicker of the two. The same easy, stable ride with a little more pull when you want it.',
+        blurb: 'The quicker of the two, with a Bluetooth sound system and the debris-free pump. The same easy, stable ride with a little more pull when you want it.',
       },
       {
         name: 'GTI SE 130',
@@ -261,7 +261,7 @@ export const units = [
         image: '130.jpg',
         power: '130 hp',
         topSpeed: '52 mph',
-        blurb: 'Smooth and friendly, a great first ride, with plenty of go for cruising the bay.',
+        blurb: 'Smooth and friendly, a great first ride, with a Bluetooth sound system and plenty of go for cruising the bay.',
       },
     ],
     specs: {
@@ -271,6 +271,7 @@ export const units = [
       Engine: 'Rotax 1630 ACE, 1630 cc',
       'Top speed': '52 to 55 mph',
       Seating: '3 riders each',
+      'Sound system': 'Bluetooth audio',
       Length: '10 ft 11 in',
       Width: '49 in',
       Fuel: '15.9 gallon tank',
@@ -279,6 +280,8 @@ export const units = [
     },
     features: [
       'Brake and reverse for easy docking',
+      'Bluetooth sound system',
+      'Variable trim and a speed limiter mode',
       'Stable, beginner-friendly hull',
       'Seats three',
       'Boarding step and reboarding ladder',
