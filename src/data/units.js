@@ -33,7 +33,7 @@ export const units = [
       Length: '19 ft',
       Guests: '10 guests',
       Engine: '150 hp Mercury outboard',
-      'Top speed': '40 mph',
+      'Top speed': '46 mph',
       Year: '2023',
       'USCG capacity': '12 persons / 1,600 lbs',
     },
