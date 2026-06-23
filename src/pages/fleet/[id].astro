@@ -38,6 +38,17 @@ if (unit.floorplan) {
   }
 }
 
+// Map "<unitId>/<file>" -> imported image, for per-model cards (jet skis).
+const unitImageMap = {};
+for (const [path, mod] of Object.entries(fpModules)) {
+  const m = path.match(/units\/([^/]+)\/([^/]+)$/);
+  if (m) unitImageMap[`${m[1]}/${m[2]}`] = mod.default;
+}
+const models = (unit.models || []).map((mdl) => ({
+  ...mdl,
+  img: unitImageMap[`${unit.id}/${mdl.image}`] || null,
+}));
+
 const title = `${unit.name} | ${unit.yearMakeModel} | Boss Life Rentals`;
 const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, fueled, and ready by a local family.`;
 ---
@@ -89,6 +100,50 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
             <h2 class="t-h2" id="overview-h">{unit.tagline}</h2>
             <p class="block__body detail__summary">{unit.summary}</p>
           </section>
+
+          {
+            models.length > 0 && (
+              <section class="block reveal" aria-labelledby="models-h">
+                <h2 class="t-h2" id="models-h">Two to choose from</h2>
+                <p class="block__body">
+                  Same easy ride, your pick of power. The yellow 170 has a little more pull, and the
+                  orange 130 is smooth and friendly.
+                </p>
+                <div class="models">
+                  {models.map((m) => (
+                    <article class="modelcard">
+                      <div class="modelcard__media">
+                        {m.img && (
+                          <Image
+                            src={m.img}
+                            alt={`Sea-Doo ${m.name}, ${m.color}.`}
+                            widths={[400, 640, 800]}
+                            sizes="(min-width: 720px) 40vw, 100vw"
+                            loading="lazy"
+                          />
+                        )}
+                      </div>
+                      <div class="modelcard__body">
+                        <h3 class="modelcard__name">{m.name}</h3>
+                        <p class="modelcard__color">{m.color}</p>
+                        <div class="modelcard__specs">
+                          <span class="modelcard__spec">
+                            <span class="modelcard__spec-k">Power</span>
+                            <span class="modelcard__spec-v">{m.power}</span>
+                          </span>
+                          <span class="modelcard__spec">
+                            <span class="modelcard__spec-k">Top speed</span>
+                            <span class="modelcard__spec-v">{m.topSpeed}</span>
+                          </span>
+                        </div>
+                        <p class="modelcard__blurb">{m.blurb}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )
+          }
 
           {
             unit.highlight && (
@@ -398,6 +453,86 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
   @media (prefers-reduced-motion: reduce) {
     .detail-hero__video {
       /* poster frame only, no motion */
+    }
+  }
+
+  /* Two-model picker (jet skis): a clean white card per ski, the studio profile
+     on white reading as a catalog shot, with the per-ski power and top speed. */
+  .models {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 0.75rem + 1.5vw, 1.5rem);
+  }
+  .modelcard {
+    background: var(--color-white);
+    border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .modelcard__media {
+    aspect-ratio: 4 / 3;
+    background: var(--color-white);
+  }
+  .modelcard__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .modelcard__body {
+    padding: clamp(1.125rem, 0.9rem + 1vw, 1.5rem);
+  }
+  .modelcard__name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.375rem;
+    color: var(--color-ink);
+    letter-spacing: -0.01em;
+  }
+  .modelcard__color {
+    margin-top: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-azure-ink);
+  }
+  .modelcard__specs {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .modelcard__spec {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .modelcard__spec-k {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+  }
+  .modelcard__spec-v {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.125rem;
+    color: var(--color-ink);
+  }
+  .modelcard__blurb {
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+  }
+  @media (min-width: 720px) {
+    .models {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
