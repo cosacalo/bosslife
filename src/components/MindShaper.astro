@@ -12,6 +12,8 @@
 // palette does the work, not pictograms.
 import { Image } from 'astro:assets';
 import waterPhoto from '../assets/units/stella/stella-01.jpg';
+import roadPhoto from '../assets/mind/road.jpg';
+import speedPhoto from '../assets/mind/speed.jpg';
 
 const beats = [
   {
@@ -58,6 +60,14 @@ const beats = [
       </article>
 
       <article class="mind__panel mind__panel--road reveal" style="--reveal-delay: 90ms">
+        <Image
+          class="mind__photo"
+          src={roadPhoto}
+          alt="A travel trailer set up at a beachfront campsite with a fire pit at sunset."
+          widths={[600, 900, 1200]}
+          sizes="(min-width: 880px) 44vw, 100vw"
+          loading="lazy"
+        />
         <div class="mind__panel-body">
           <h3 class="mind__label">On the road</h3>
           <p class="mind__line">{beats[1].line}</p>
@@ -65,6 +75,14 @@ const beats = [
       </article>
 
       <article class="mind__panel mind__panel--speed reveal" style="--reveal-delay: 160ms">
+        <Image
+          class="mind__photo"
+          src={speedPhoto}
+          alt="A yellow jet ski resting on calm, clear turquoise water."
+          widths={[600, 900, 1200]}
+          sizes="(min-width: 880px) 44vw, 100vw"
+          loading="lazy"
+        />
         <div class="mind__panel-body">
           <h3 class="mind__label">A little speed</h3>
           <p class="mind__line">{beats[2].line}</p>
@@ -133,8 +151,9 @@ const beats = [
     max-width: 36ch;
   }
 
-  /* Water: real photo with a navy gradient foot so the white label reads. */
-  .mind__panel--water .mind__photo {
+  /* All three beats are real photos now (water, road, speed), each with a navy
+     gradient foot so the white label reads. The brand navy ties them together. */
+  .mind__photo {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -142,42 +161,25 @@ const beats = [
     object-fit: cover;
     z-index: 0;
   }
-  .mind__panel--water::after {
+  .mind__panel::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
     background: linear-gradient(
       to top,
-      rgba(0, 20, 47, 0.88) 0%,
-      rgba(0, 28, 64, 0.35) 48%,
-      rgba(0, 36, 84, 0) 78%
+      rgba(0, 20, 47, 0.9) 0%,
+      rgba(0, 28, 64, 0.4) 50%,
+      rgba(0, 36, 84, 0) 80%
     );
   }
-  .mind__panel--water .mind__label,
-  .mind__panel--water .mind__line {
+  .mind__label,
+  .mind__line {
     color: var(--color-white);
   }
-
-  /* Road: sun-yellow fill, navy ink on top (~13:1, the brand's brightest beat). */
-  .mind__panel--road {
-    background-color: var(--color-sun);
-  }
-  .mind__panel--road .mind__label {
-    color: var(--color-ink);
-  }
-  .mind__panel--road .mind__line {
-    color: #1a2e4a;
-  }
-
-  /* Speed: azure fill, white type. Deepened from raw brand azure so the small
-     body line also clears WCAG AA 4.5:1 (raw #0C78E4 white is only ~4.37). */
-  .mind__panel--speed {
-    background: radial-gradient(130% 130% at 12% 0%, #1570d4 0%, #0a5fbe 60%);
-  }
-  .mind__panel--speed .mind__label,
-  .mind__panel--speed .mind__line {
-    color: var(--color-white);
+  /* Keep the jet ski centered when its squarer photo is cropped to the panel. */
+  .mind__panel--speed .mind__photo {
+    object-position: 50% 42%;
   }
 
   @media (min-width: 880px) {
