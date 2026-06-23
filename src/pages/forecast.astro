@@ -54,9 +54,6 @@ const homeHref = base;
         <button type="submit" class="btn btn-primary fc-go">Update card</button>
         <button type="button" class="btn btn-secondary fc-copy" id="fc-copy">Copy link</button>
       </form>
-      <p class="fc-hint">
-        Pick a day and window, then <b>Copy link</b> to send a renter straight to their own forecast.
-      </p>
 
       {/* ---- Status / errors ---- */}
       <div class="fc-status" id="fc-status" role="status" aria-live="polite"></div>
@@ -580,9 +577,13 @@ const homeHref = base;
         render(f);
         cardEl.classList.remove('is-loading', 'is-empty');
 
-        var note = 'Live for <b>' + f.date.dow + ', ' + f.date.mo + ' ' + f.date.num + '</b>. Fetched ' + f.updated + '.';
-        if (errors.length) note += ' <span class="fc-status-warn">Some data was unavailable: ' + errors.join('; ') + '. Those fields are left off, not guessed.</span>';
-        setStatus(note, errors.length ? 'warn' : 'ok');
+        // Public page: stay quiet on success (the card footer carries the
+        // "Updated" timestamp). Only speak up if a source was unavailable.
+        if (errors.length) {
+          setStatus('<span class="fc-status-warn">Some data was unavailable: ' + errors.join('; ') + '. Those fields are left off, not guessed.</span>', 'warn');
+        } else {
+          setStatus('', 'ok');
+        }
       });
   }
 
@@ -649,8 +650,6 @@ const homeHref = base;
   .fc-field input:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--color-azure); }
   .fc-go { min-height: 44px; }
   .fc-copy { min-height: 44px; }
-  .fc-hint { margin-top: 0.75rem; font-size: 0.875rem; color: var(--color-slate); }
-  .fc-hint b { color: var(--color-azure-ink); font-weight: 600; }
 
   /* Status line */
   .fc-status { margin-top: 1.25rem; font-size: 0.9375rem; line-height: 1.5; color: var(--color-slate); min-height: 1.5rem; }
