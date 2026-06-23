@@ -17,9 +17,10 @@ const homeHref = base;
   ogImage="og-forecast.jpg"
   ogAlt="Sarasota boating forecast: live wind, seas, tide, and sun for your day on the water."
 >
-  {/* Unlisted utility page. Live, but intentionally not linked in the main nav yet.
-      All data is fetched client-side from Open-Meteo (NOAA models) and NOAA CO-OPS,
-      both CORS-open, so this works on the static GitHub Pages build with no backend. */}
+  {/* Live forecast tool, linked from the main nav (as a real page, with an arrow
+      marker to distinguish it from the in-page anchor jumps). All data is fetched
+      client-side from Open-Meteo (NOAA models) and NOAA CO-OPS, both CORS-open, so
+      this works on the static GitHub Pages build with no backend. */}
   <header class="fc-topnav">
     <div class="container-x fc-topnav__inner">
       <a href={homeHref} aria-label="Boss Life Rentals, home">

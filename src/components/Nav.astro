@@ -2,6 +2,14 @@
 // Sticky top nav. Transparent over the hero, gains a surface plate on scroll.
 // Anchor links resolve against the site root so the nav also works on detail
 // pages (where "#fleet" alone would just stay on the detail page).
+//
+// IA note: most items are in-page anchor jumps (single-page marketing site).
+// "Fleet" is a dropdown of the actual units that link straight to their detail
+// pages, so a decided visitor skips the scroll-then-click. Links that navigate to
+// a real PAGE (the units, Forecast) carry a small arrow to distinguish them from
+// the in-page jumps.
+import { units } from '../data/units.js';
+
 const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : import.meta.env.BASE_URL + '/';
@@ -11,17 +19,13 @@ const logo = base + 'logo.png';
 const { onDetail = false } = Astro.props;
 const root = onDetail ? base : '';
 
-const links = [
-  { href: `${root}#about`, label: 'Our story' },
-  { href: `${root}#fleet`, label: 'Fleet' },
-  { href: `${root}#why`, label: 'How it works' },
-  // Forecast is a standalone page, so its link is always an absolute path
-  // (works from the home page and from unit detail pages alike).
-  { href: `${base}forecast`, label: 'Forecast' },
-  { href: `${root}#contact`, label: 'Contact' },
-];
+const fleetHref = `${root}#fleet`;
+const forecastHref = `${base}forecast`;
 const homeHref = onDetail ? base : '#top';
 const bookHref = `${root}#contact`;
+
+// The fleet units, in display order, each linking straight to its detail page.
+const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}` }));
 ---
 
 <header class="nav" data-nav>
@@ -31,7 +35,39 @@ const bookHref = `${root}#contact`;
     </a>
 
     <nav class="nav__links" aria-label="Primary">
-      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+      <a href={`${root}#about`}>Our story</a>
+
+      <div class="nav__drop">
+        <a href={fleetHref} class="nav__drop-trigger" aria-haspopup="true">
+          Fleet
+          <svg class="nav__caret" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <div class="nav__menu" role="menu" aria-label="Fleet">
+          {
+            fleetUnits.map((u) => (
+              <a href={u.href} role="menuitem" class="nav__menu-link">
+                <span>{u.name}</span>
+                <svg class="nav__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3.5 8H12.5M12.5 8 8.5 4M12.5 8 8.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <a href={`${root}#why`}>How it works</a>
+
+      <a href={forecastHref} class="nav__pagelink">
+        Forecast
+        <svg class="nav__arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3.5 8H12.5M12.5 8 8.5 4M12.5 8 8.5 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+
+      <a href={`${root}#contact`}>Contact</a>
       <a href={bookHref} class="nav__cta">Book direct</a>
     </nav>
 
@@ -49,7 +85,14 @@ const bookHref = `${root}#contact`;
 
   <div class="nav__mobile" id="mobile-menu" hidden data-nav-menu>
     <nav class="container-x" aria-label="Mobile">
-      {links.map((l) => <a href={l.href} data-nav-close>{l.label}</a>)}
+      <a href={`${root}#about`} data-nav-close>Our story</a>
+      <a href={fleetHref} data-nav-close>Fleet</a>
+      <div class="nav__mobile-sub">
+        {fleetUnits.map((u) => <a href={u.href} data-nav-close class="nav__mobile-subitem">{u.name}</a>)}
+      </div>
+      <a href={`${root}#why`} data-nav-close>How it works</a>
+      <a href={forecastHref} data-nav-close>Forecast</a>
+      <a href={`${root}#contact`} data-nav-close>Contact</a>
       <a href={bookHref} data-nav-close class="nav__mobile-cta">Book direct</a>
     </nav>
   </div>
@@ -123,14 +166,17 @@ const bookHref = `${root}#contact`;
     gap: 2rem;
     align-items: center;
   }
-  .nav__links a {
+  .nav__links > a,
+  .nav__drop-trigger {
     color: var(--color-white);
     font-weight: 600;
     font-size: 0.9375rem;
     position: relative;
     padding-block: 0.25rem;
   }
-  .nav__links a::after {
+  /* Underline sweep on the top-level items only (not dropdown contents). */
+  .nav__links > a::after,
+  .nav__drop-trigger::after {
     content: '';
     position: absolute;
     left: 0;
@@ -142,19 +188,120 @@ const bookHref = `${root}#contact`;
     transform-origin: left;
     transition: transform 0.25s var(--ease-craft);
   }
-  .nav__links a:hover::after,
-  .nav__links a:focus-visible::after {
+  .nav__cta::after {
+    display: none;
+  }
+  .nav__links > a:hover::after,
+  .nav__links > a:focus-visible::after,
+  .nav__drop:hover .nav__drop-trigger::after,
+  .nav__drop:focus-within .nav__drop-trigger::after {
     transform: scaleX(1);
   }
+
+  /* Page-link arrow: marks links that go to a real page vs an in-page jump. */
+  .nav__pagelink,
+  .nav__drop-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .nav__arrow {
+    width: 0.8rem;
+    height: 0.8rem;
+    flex: none;
+    opacity: 0.45;
+    transition: opacity 0.25s var(--ease-craft), transform 0.25s var(--ease-craft);
+  }
+  .nav__pagelink:hover .nav__arrow,
+  .nav__pagelink:focus-visible .nav__arrow {
+    opacity: 0.95;
+    transform: translateX(2px);
+  }
+  .nav__caret {
+    width: 0.7rem;
+    height: 0.7rem;
+    opacity: 0.7;
+    transition: transform 0.25s var(--ease-craft);
+  }
+  .nav__drop:hover .nav__caret,
+  .nav__drop:focus-within .nav__caret {
+    transform: rotate(180deg);
+  }
+
+  /* Fleet dropdown */
+  .nav__drop {
+    position: relative;
+  }
+  .nav__menu {
+    position: absolute;
+    top: 100%;
+    left: -0.75rem;
+    margin-top: 0.4rem;
+    min-width: 13rem;
+    background: color-mix(in srgb, var(--color-ink) 95%, #000);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    display: grid;
+    gap: 0.0625rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition:
+      opacity 0.2s var(--ease-craft),
+      transform 0.2s var(--ease-craft),
+      visibility 0.2s var(--ease-craft);
+    z-index: 60;
+  }
+  /* Invisible bridge so the menu does not close while crossing the gap. */
+  .nav__menu::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -0.4rem;
+    height: 0.4rem;
+  }
+  .nav__drop:hover .nav__menu,
+  .nav__drop:focus-within .nav__menu {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .nav__menu-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    white-space: nowrap;
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--radius-sm);
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: background-color 0.2s var(--ease-craft), color 0.2s var(--ease-craft);
+  }
+  .nav__menu-link:hover,
+  .nav__menu-link:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-white);
+  }
+  .nav__menu-link:hover .nav__arrow,
+  .nav__menu-link:focus-visible .nav__arrow {
+    opacity: 0.95;
+    transform: translateX(2px);
+  }
+
   .nav__cta {
     color: var(--color-ink) !important;
     background: var(--color-sun);
-    padding: 0.5rem 1rem !important;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.5rem 1rem;
     border-radius: var(--radius-pill);
     transition: filter 0.2s var(--ease-craft);
-  }
-  .nav__cta::after {
-    display: none;
   }
   .nav__cta:hover {
     filter: brightness(0.96);
@@ -215,6 +362,21 @@ const bookHref = `${root}#contact`;
     font-size: 1.125rem;
     padding-block: 0.875rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  /* Units nested under Fleet on mobile. */
+  .nav__mobile-sub {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid rgba(255, 255, 255, 0.14);
+    margin-left: 0.25rem;
+  }
+  .nav__mobile-subitem {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    padding-block: 0.6rem !important;
+    padding-left: 1rem !important;
+    color: rgba(255, 255, 255, 0.82) !important;
+    border-bottom: none !important;
   }
 
   @media (min-width: 768px) {
