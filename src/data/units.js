@@ -82,7 +82,7 @@ export const units = [
       Length: '22 ft',
       Guests: '8 guests',
       Engine: '250 hp Yamaha four stroke',
-      'Top speed': '40 mph',
+      'Top speed': '52 mph',
       Year: '2021',
       Fuel: '101 gallon range',
       'USCG capacity': '10 persons / 1,445 lbs',
