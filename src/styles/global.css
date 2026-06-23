@@ -665,6 +665,7 @@ video {
   border-radius: var(--radius-pill);
   border: none;
   background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   color: var(--color-white);
   cursor: pointer;
@@ -714,6 +715,7 @@ video {
   font-weight: 600;
   color: var(--color-white);
   background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   padding: 0.25rem 0.625rem;
   border-radius: var(--radius-pill);
