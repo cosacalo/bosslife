@@ -241,7 +241,7 @@ export const units = [
     tagline: 'On the water in minutes.',
     day: 'On the water in minutes. Two easy-riding Sea-Doos, ready at the ramp for the part of the day that needs a little speed.',
     summary:
-      'Two 2022 Sea-Doo GTI SE personal watercraft, a yellow 170 and an orange 130. Stable, easy to ride, and ready at the ramp for the part of the day that needs a little speed.',
+      'Two 2022 Sea-Doo GTI SE personal watercraft, a yellow 170 and an orange 130. Stable, easy to ride, and ready at the ramp for the part of the day that needs a little speed. Both are now set up for water-skiing and towing.',
     chips: ['Two to ride', '3 seats each', 'Brake and reverse'],
     heroVideo: '/jetski-rotate.mp4',
     heroPoster: '/jetski-rotate-poster.jpg',
@@ -289,9 +289,11 @@ export const units = [
       'Variable trim and a speed limiter mode',
       'Stable, beginner-friendly hull',
       'Seats three',
+      'Adjustable handlebars',
       'Boarding step and reboarding ladder',
       'Watertight storage for phone and keys',
-      'Tow hook for tubing',
+      'Cup holders',
+      'Water-ski and tow ready',
     ],
     included: 'Booked direct with us. Life jackets included, and we get you set up at the ramp.',
     requirements: [
