@@ -1,9 +1,13 @@
 ---
 import { Image } from 'astro:assets';
 
-// Animated gallery: large image, prev/next, dots, keyboard arrows, drag/swipe,
-// crossfade transitions. Images are glob-imported (eager) and mapped by unit id
-// + filename from unit.images. Empty images[] -> on-brand placeholder tile.
+// Animated gallery: large media, prev/next, dots, keyboard arrows, drag/swipe,
+// crossfade transitions. Photos are glob-imported (eager) and mapped by unit id
+// + filename from unit.images. If the unit has a ride clip (unit.clipVideo) it
+// LEADS as the first slide, making this a single mixed-media surface for the page
+// instead of a separate video block lower down. The auto-advance yields to the
+// video while it plays, and the video pauses when you navigate away from it.
+// Empty media -> on-brand placeholder tile.
 //
 // Props: unit (full unit object)
 const { unit } = Astro.props;
@@ -12,6 +16,7 @@ const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : import.meta.env.BASE_URL + '/';
 const logo = base + 'logo.png';
+const asset = (p) => base + p.replace(/^\//, '');
 
 // Eager glob of every staged unit image. Keyed by absolute-ish module path.
 const modules = import.meta.glob('../assets/units/*/*.{jpg,png}', { eager: true });
@@ -24,65 +29,94 @@ for (const [path, mod] of Object.entries(modules)) {
   if (m) imageMap[`${m[1]}/${m[2]}`] = mod.default;
 }
 
-const slides = (unit.images || [])
+const photos = (unit.images || [])
   .map((file) => imageMap[`${unit.id}/${file}`])
   .filter(Boolean);
 
-const hasPhotos = slides.length > 0;
+// One media list: the real ride clip leads (if present), then the photos.
+const media = [];
+if (unit.clipVideo) {
+  media.push({
+    type: 'video',
+    src: asset(unit.clipVideo),
+    poster: unit.clipPoster ? asset(unit.clipPoster) : undefined,
+    captions: unit.clipCaptions ? asset(unit.clipCaptions) : undefined,
+    title: unit.clipTitle || `${unit.name} on the water`,
+  });
+}
+photos.forEach((img) => media.push({ type: 'photo', img }));
+
+const count = media.length;
+const hasMedia = count > 0;
 ---
 
 {
-  hasPhotos ? (
-    <figure class="gallery" data-gallery aria-roledescription="carousel" aria-label={`${unit.name} photo gallery`}>
+  hasMedia ? (
+    <figure class="gallery" data-gallery aria-roledescription="carousel" aria-label={`${unit.name} media gallery`}>
       <div class="gallery__stage" data-gallery-stage>
         <div class="gallery__track" data-gallery-track>
-          {slides.map((img, i) => (
+          {media.map((item, i) => (
             <div
               class="gallery__slide"
               data-slide={i}
+              data-video={item.type === 'video' ? '' : undefined}
               role="group"
               aria-roledescription="slide"
-              aria-label={`${i + 1} of ${slides.length}`}
+              aria-label={`${i + 1} of ${count}`}
               aria-hidden={i === 0 ? 'false' : 'true'}
             >
-              <Image
-                src={img}
-                alt={`${unit.name}, ${unit.yearMakeModel}. Photo ${i + 1}.`}
-                widths={[640, 1024, 1600]}
-                sizes="(min-width: 900px) 60vw, 100vw"
-                loading={i === 0 ? 'eager' : 'lazy'}
-                draggable={false}
-              />
+              {item.type === 'video' ? (
+                <video
+                  class="gallery__video"
+                  controls
+                  playsinline
+                  preload="none"
+                  poster={item.poster}
+                  aria-label={item.title}
+                >
+                  <source src={item.src} type="video/mp4" />
+                  {item.captions && <track kind="captions" src={item.captions} srclang="en" label="English" />}
+                </video>
+              ) : (
+                <Image
+                  src={item.img}
+                  alt={`${unit.name}, ${unit.yearMakeModel}.`}
+                  widths={[640, 1024, 1600]}
+                  sizes="(min-width: 900px) 60vw, 100vw"
+                  loading={i <= 1 ? 'eager' : 'lazy'}
+                  draggable={false}
+                />
+              )}
             </div>
           ))}
         </div>
 
-        {slides.length > 1 && (
+        {count > 1 && (
           <>
-            <button class="gallery__nav gallery__nav--prev" type="button" data-gallery-prev aria-label="Previous photo">
+            <button class="gallery__nav gallery__nav--prev" type="button" data-gallery-prev aria-label="Previous">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </button>
-            <button class="gallery__nav gallery__nav--next" type="button" data-gallery-next aria-label="Next photo">
+            <button class="gallery__nav gallery__nav--next" type="button" data-gallery-next aria-label="Next">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </button>
             <span class="gallery__count" data-gallery-count aria-hidden="true">
-              1 / {slides.length}
+              1 / {count}
             </span>
           </>
         )}
       </div>
 
-      {slides.length > 1 && (
-        <div class="gallery__dots" role="group" aria-label="Choose a photo">
-          {slides.map((_, i) => (
+      {count > 1 && (
+        <div class="gallery__dots" role="group" aria-label="Choose media">
+          {media.map((_, i) => (
             <button
               class={`gallery__dot${i === 0 ? ' is-active' : ''}`}
               type="button"
-              aria-label={`Go to photo ${i + 1}`}
+              aria-label={`Go to item ${i + 1}`}
               aria-current={i === 0 ? 'true' : undefined}
               data-gallery-dot={i}
             />
@@ -110,7 +144,7 @@ const hasPhotos = slides.length > 0;
 }
 
 {
-  hasPhotos && slides.length > 1 && (
+  hasMedia && count > 1 && (
     <script is:inline>
       (function () {
         var roots = document.querySelectorAll('[data-gallery]');
@@ -127,10 +161,20 @@ const hasPhotos = slides.length > 0;
           var timer = null;
           var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+          // Mixed-media: locate the video slide so the carousel can yield to it.
+          var videoEl = root.querySelector('.gallery__video');
+          var videoIndex = -1;
+          slides.forEach(function (s, i) { if (videoIndex === -1 && s.hasAttribute('data-video')) videoIndex = i; });
+
           function render() {
             if (track) track.style.transform = 'translateX(' + (-cur * 100) + '%)';
             slides.forEach(function (s, idx) {
-              s.setAttribute('aria-hidden', idx === cur ? 'false' : 'true');
+              var active = idx === cur;
+              s.setAttribute('aria-hidden', active ? 'false' : 'true');
+              // Keep off-screen slides out of the tab order (matters for the
+              // video controls, which would otherwise be focusable while hidden).
+              if (active) s.removeAttribute('inert');
+              else s.setAttribute('inert', '');
             });
             dots.forEach(function (d, idx) {
               var active = idx === cur;
@@ -140,7 +184,12 @@ const hasPhotos = slides.length > 0;
             });
             if (count) count.textContent = cur + 1 + ' / ' + n;
           }
-          function go(i) { cur = (i + n) % n; render(); }
+          // Pause the video whenever it is no longer the active slide.
+          function go(i) {
+            cur = (i + n) % n;
+            if (videoEl && cur !== videoIndex) videoEl.pause();
+            render();
+          }
 
           function stop() { if (timer) { clearInterval(timer); timer = null; } }
           function start() { if (reduce) return; stop(); timer = window.setInterval(function () { go(cur + 1); }, 5000); }
@@ -158,11 +207,17 @@ const hasPhotos = slides.length > 0;
             else if (e.key === 'ArrowRight') { e.preventDefault(); manual(cur + 1); }
           });
 
-          // Drag / swipe (pointer events cover touch + mouse).
+          // Drag / swipe (pointer events cover touch + mouse). Native video
+          // controls still receive plain clicks (no drag past the threshold).
           var startX = null;
           var dragging = false;
           if (stage) {
-            stage.addEventListener('pointerdown', function (e) { dragging = true; startX = e.clientX; });
+            // On the video slide, let horizontal drags reach the native scrubber
+            // instead of swiping the carousel (arrows/dots still navigate).
+            stage.addEventListener('pointerdown', function (e) {
+              if (cur === videoIndex) return;
+              dragging = true; startX = e.clientX;
+            });
             stage.addEventListener('pointerup', function (e) {
               if (!dragging || startX === null) return;
               var dx = e.clientX - startX;
@@ -170,6 +225,13 @@ const hasPhotos = slides.length > 0;
               dragging = false; startX = null;
             });
             stage.addEventListener('pointercancel', function () { dragging = false; startX = null; });
+          }
+
+          // While the clip plays, the carousel holds; when it pauses or ends, it resumes.
+          if (videoEl) {
+            videoEl.addEventListener('play', stop);
+            videoEl.addEventListener('pause', function () { if (!reduce) start(); });
+            videoEl.addEventListener('ended', function () { if (!reduce) start(); });
           }
 
           // Auto-advance, paused on hover/focus and when off-screen.

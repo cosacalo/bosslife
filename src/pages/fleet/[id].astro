@@ -146,25 +146,6 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
           }
 
           {
-            unit.clipVideo && (
-              <section class="block reveal" aria-labelledby="clip-h">
-                <h2 class="t-h2" id="clip-h">{unit.clipTitle || 'Out on the water'}</h2>
-                <figure class="clip">
-                  <video
-                    class="clip__video"
-                    controls
-                    playsinline
-                    preload="none"
-                    poster={unit.clipPoster ? asset(unit.clipPoster) : undefined}
-                  >
-                    <source src={asset(unit.clipVideo)} type="video/mp4" />
-                  </video>
-                </figure>
-              </section>
-            )
-          }
-
-          {
             unit.highlight && (
               <section class="block reveal highlightcard" aria-labelledby="highlight-h">
                 <h2 class="t-h2 highlightcard__title" id="highlight-h">{unit.highlight.title}</h2>
@@ -553,23 +534,6 @@ const description = `${unit.summary} Book ${unit.name} in Sarasota, kept clean, 
     .models {
       grid-template-columns: 1fr 1fr;
     }
-  }
-
-  /* Real ride clip: user-played (controls, no autoplay) so it stays calm and
-     keeps its sound. Framed like the gallery, navy ground while it loads. */
-  .clip {
-    margin: 1.25rem 0 0;
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    background-color: var(--color-ink);
-  }
-  .clip__video {
-    width: 100%;
-    height: auto;
-    display: block;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
   }
 
   /* Floor plan: line diagram on white, in a clean card on the light page. */

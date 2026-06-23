@@ -248,6 +248,7 @@ export const units = [
     // Real ride clip (user-played, not the abstract rotating hero).
     clipVideo: '/jetski-ride.mp4',
     clipPoster: '/jetski-ride-poster.jpg',
+    clipCaptions: '/jetski-ride.vtt',
     clipTitle: 'Out on the bay',
     // Per-model cards (the "two to choose from" block + the fleet pictures).
     models: [
