@@ -67,7 +67,8 @@ const jsonLd = {
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#002454" />
 
-    <!-- Favicons (base-path-aware) -->
+    <!-- Favicons (base-path-aware). SVG first for crisp modern browsers. -->
+    <link rel="icon" type="image/svg+xml" href={asset('favicon.svg')} />
     <link rel="icon" href={asset('favicon.ico')} sizes="any" />
     <link rel="icon" type="image/png" sizes="16x16" href={asset('favicon-16.png')} />
     <link rel="icon" type="image/png" sizes="32x32" href={asset('favicon-32.png')} />

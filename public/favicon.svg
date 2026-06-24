@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0C78E4"/>
+  <rect x="14" y="14" width="484" height="484" rx="84" fill="none" stroke="#FCD80C" stroke-width="20"/>
+  <text x="256" y="276" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="290" letter-spacing="-18" fill="#FCD80C" text-anchor="middle" dominant-baseline="middle">BL</text>
+</svg>
