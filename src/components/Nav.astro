@@ -144,7 +144,6 @@ const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}
     transition:
       background-color 0.3s var(--ease-craft),
       box-shadow 0.3s var(--ease-craft),
-      padding 0.7s var(--ease-craft),
       backdrop-filter 0.3s var(--ease-craft);
   }
   .nav.is-scrolled {
@@ -158,14 +157,6 @@ const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}
     align-items: center;
     justify-content: space-between;
     padding-block: 0.75rem;
-    border: 1px solid transparent;
-    transition:
-      max-width 0.7s var(--ease-craft),
-      padding 0.7s var(--ease-craft),
-      background-color 0.6s var(--ease-craft),
-      border-color 0.6s var(--ease-craft),
-      border-radius 0.6s var(--ease-craft),
-      box-shadow 0.6s var(--ease-craft);
   }
   .nav__brand img {
     height: 44px;
@@ -398,35 +389,6 @@ const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}
     .nav__toggle,
     .nav__mobile {
       display: none;
-    }
-
-    /* Floating pill on scroll: the full-width bar collapses into a centered,
-       blurred, rounded pill, and expands back at the top. The pill carries the
-       surface, so the full-width plate is dropped on desktop. */
-    .nav.is-scrolled {
-      background-color: transparent;
-      box-shadow: none;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-      padding-top: 0.4rem;
-    }
-    .nav.is-scrolled .nav__inner {
-      max-width: 1120px;
-      padding-block: 0.5rem;
-      padding-inline: 1.5rem;
-      background-color: color-mix(in srgb, var(--color-ink) 92%, transparent);
-      -webkit-backdrop-filter: blur(12px) saturate(140%);
-      backdrop-filter: blur(12px) saturate(140%);
-      border-color: rgba(255, 255, 255, 0.14);
-      border-radius: 1rem;
-      box-shadow: var(--shadow-md);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .nav,
-    .nav__inner {
-      transition: none;
     }
   }
 </style>
