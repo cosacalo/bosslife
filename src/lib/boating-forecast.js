@@ -16,13 +16,57 @@
    data fresh without any extra header.
    ============================================================================ */
 
-export const COORDS = {
-  lat: 27.347, lon: -82.548,   // ramp area (point forecast)
-  mlat: 27.27, mlon: -82.62,   // just offshore (marine)
-  station: '8726083',          // NOAA "Sarasota" tides
-  area: 'Sarasota, FL',
-  stationLabel: 'Sarasota Bay, NOAA #8726083',
-};
+/* ----------------------------------------------------------------- locations
+   Boss Life's launch locations (mirrors the Boatsetter listing): Centennial
+   Park is the included home base; Venice, Englewood, and Nokomis are add-on
+   pickups. Each carries its own point-forecast coordinates, offshore marine
+   coordinates, and the nearest NOAA CO-OPS tide station that actually serves
+   live predictions (all four verified against the datagetter endpoint).
+
+   Nokomis note: NOAA's own "Nokomis, Venice Inlet" station (#8725899) is a
+   subordinate station the live datagetter will not return predictions for, so
+   Nokomis borrows the Venice, Roberts Bay station (#8725889). That is
+   geographically honest: Nokomis sits on Venice Inlet, the same tidal pass as
+   Roberts Bay, a few miles apart. Its weather still comes from its own coords,
+   so the card stays distinct. The station name is surfaced honestly on the card. */
+export const LOCATIONS = [
+  {
+    id: 'centennial', name: 'Centennial Park', sub: 'Included pickup', included: true,
+    lat: 27.347, lon: -82.548,   // ramp area (point forecast)
+    mlat: 27.27, mlon: -82.62,   // just offshore (marine)
+    station: '8726083', area: 'Sarasota, FL',
+    stationLabel: 'Sarasota Bay, NOAA #8726083',
+  },
+  {
+    id: 'venice', name: 'Venice', sub: 'Add-on pickup',
+    lat: 27.100, lon: -82.452,   // Higel Marine Park ramp area
+    mlat: 27.06, mlon: -82.52,
+    station: '8725889', area: 'Venice, FL',
+    stationLabel: 'Venice, Roberts Bay, NOAA #8725889',
+  },
+  {
+    id: 'englewood', name: 'Englewood', sub: 'Add-on pickup',
+    lat: 26.955, lon: -82.357,   // Indian Mound Park / Lemon Bay
+    mlat: 26.90, mlon: -82.43,
+    station: '8725747', area: 'Englewood, FL',
+    stationLabel: 'Englewood, Lemon Bay, NOAA #8725747',
+  },
+  {
+    id: 'nokomis', name: 'Nokomis', sub: 'Add-on pickup',
+    lat: 27.118, lon: -82.478,   // North Jetty / Venice Inlet
+    mlat: 27.07, mlon: -82.55,
+    station: '8725889', area: 'Nokomis, FL',
+    stationLabel: 'Venice Inlet, NOAA #8725889',
+  },
+];
+
+export const DEFAULT_LOCATION = LOCATIONS[0];
+export function locationById(id) {
+  return LOCATIONS.find((l) => l.id === id) || DEFAULT_LOCATION;
+}
+
+// Back-compat alias for the default location (was the single hardcoded point).
+export const COORDS = DEFAULT_LOCATION;
 
 /* ------------------------------------------------------------------ helpers */
 export function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -80,21 +124,21 @@ export function nowStampET() {
 }
 
 /* -------------------------------------------------------------------- fetch */
-export function forecastUrl(d) {
-  return 'https://api.open-meteo.com/v1/forecast?latitude=' + COORDS.lat + '&longitude=' + COORDS.lon +
+export function forecastUrl(d, loc = DEFAULT_LOCATION) {
+  return 'https://api.open-meteo.com/v1/forecast?latitude=' + loc.lat + '&longitude=' + loc.lon +
     '&hourly=precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m' +
     '&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
     '&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
 }
-export function marineUrl(d) {
-  return 'https://marine-api.open-meteo.com/v1/marine?latitude=' + COORDS.mlat + '&longitude=' + COORDS.mlon +
+export function marineUrl(d, loc = DEFAULT_LOCATION) {
+  return 'https://marine-api.open-meteo.com/v1/marine?latitude=' + loc.mlat + '&longitude=' + loc.mlon +
     '&hourly=wave_height,wave_period,wind_wave_height,wind_wave_period' +
     '&length_unit=imperial&timezone=America%2FNew_York&start_date=' + d + '&end_date=' + d;
 }
-export function tidesUrl(d) {
+export function tidesUrl(d, loc = DEFAULT_LOCATION) {
   const b = shiftYmd(d, -1).replace(/-/g, ''), e = shiftYmd(d, 1).replace(/-/g, '');
   return 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=' + b +
-    '&end_date=' + e + '&station=' + COORDS.station + '&product=predictions&datum=MLLW' +
+    '&end_date=' + e + '&station=' + loc.station + '&product=predictions&datum=MLLW' +
     '&time_zone=lst_ldt&interval=hilo&units=english&format=json&application=BossLifeRentals';
 }
 
@@ -107,9 +151,9 @@ export function getJson(url) {
 
 // Fetch the three sources for a day. Returns raw payloads plus a list of any
 // source errors. NOAA answers with {error} at HTTP 200 when a day has no data.
-export function fetchAll(date) {
+export function fetchAll(date, loc = DEFAULT_LOCATION) {
   const errors = [];
-  return Promise.allSettled([getJson(forecastUrl(date)), getJson(marineUrl(date)), getJson(tidesUrl(date))])
+  return Promise.allSettled([getJson(forecastUrl(date, loc)), getJson(marineUrl(date, loc)), getJson(tidesUrl(date, loc))])
     .then((res) => {
       const fc = res[0].status === 'fulfilled' ? res[0].value : null;
       const mar = res[1].status === 'fulfilled' ? res[1].value : null;
@@ -123,9 +167,9 @@ export function fetchAll(date) {
 }
 
 // Lighter fetch for the homepage band: forecast + marine only (no tides).
-export function fetchWeather(date) {
+export function fetchWeather(date, loc = DEFAULT_LOCATION) {
   const errors = [];
-  return Promise.allSettled([getJson(forecastUrl(date)), getJson(marineUrl(date))])
+  return Promise.allSettled([getJson(forecastUrl(date, loc)), getJson(marineUrl(date, loc))])
     .then((res) => {
       const fc = res[0].status === 'fulfilled' ? res[0].value : null;
       const mar = res[1].status === 'fulfilled' ? res[1].value : null;
@@ -139,9 +183,9 @@ export function fetchWeather(date) {
 // Build the structured forecast object for a date + rental window from the raw
 // sources. Mutates `errors` with any per-field gaps. Throws if the core forecast
 // source has no usable data (e.g. date outside the model range).
-export function deriveConditions(date, fc, mar, tide, errors, winStart, winEnd) {
+export function deriveConditions(date, fc, mar, tide, errors, winStart, winEnd, loc = DEFAULT_LOCATION) {
   const f = {
-    area: COORDS.area, station: COORDS.stationLabel,
+    area: loc.area, station: loc.stationLabel, locationName: loc.name, stationId: loc.station,
     date: dateParts(date),
     window: winLabel(winStart, winEnd),
     winStart, winEnd,

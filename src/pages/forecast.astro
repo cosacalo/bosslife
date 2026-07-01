@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Footer from '../components/Footer.astro';
+import { LOCATIONS } from '../lib/boating-forecast.js';
 
 // Base-path-aware asset URL (matches the rest of the site).
 const base = import.meta.env.BASE_URL.endsWith('/')
@@ -61,6 +62,27 @@ const homeHref = base;
       {/* ---- Status / errors ---- */}
       <div class="fc-status" id="fc-status" role="status" aria-live="polite"></div>
 
+      {/* ---- Launch location tabs (folder tabs on the card) ---- */}
+      {/* Weather and tides shift between our ramps, so the renter picks their
+          pickup location and the card below re-pulls for it. Sits right on the
+          card, least disturbance to the rest of the page. Centennial is the
+          included home base; the others are add-on pickups. */}
+      <div class="fc-locs" role="group" aria-label="Forecast location">
+        <div class="fc-locs__set" id="fc-locs">
+          {LOCATIONS.map((loc, i) => (
+            <button
+              type="button"
+              class="fc-loc"
+              data-loc={loc.id}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+            >
+              <span class="fc-loc__name">{loc.name}</span>
+              <span class="fc-loc__sub">{loc.sub}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ---- The card (rendered by JS) ---- */}
       <div class="fc-cardwrap">
         <div class="fc-card" id="fc-card" aria-live="polite" data-logo={logo}>
@@ -73,7 +95,7 @@ const homeHref = base;
         Wind, rain, seas, UV, and sun come from the
         <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
         run of the NOAA forecast models. Tides come from
-        <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726083" target="_blank" rel="noopener">NOAA station 8726083 (Sarasota)</a>.
+        <a id="fc-tide-source" href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8726083" target="_blank" rel="noopener">NOAA station 8726083 (Sarasota Bay)</a>.
         Forecast only. Always check conditions yourself before you leave the ramp.
       </p>
     </div>
@@ -83,7 +105,7 @@ const homeHref = base;
 </Base>
 
 <script>
-import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '../lib/boating-forecast.js';
+import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2, locationById, DEFAULT_LOCATION } from '../lib/boating-forecast.js';
 /* ============================================================================
    Boss Life — live boating forecast page (Option A: fully automatic).
    Data + derivation come from ../lib/boating-forecast.js (shared with the
@@ -271,10 +293,28 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   var startEl = document.getElementById('fc-start');
   var endEl = document.getElementById('fc-end');
   var formEl = document.getElementById('fc-form');
+  var locSetEl = document.getElementById('fc-locs');
+  var tideSourceEl = document.getElementById('fc-tide-source');
+
+  /* selected launch location (defaults to the included home base) */
+  var currentLoc = DEFAULT_LOCATION;
 
   function setStatus(html, cls) {
     statusEl.className = 'fc-status' + (cls ? ' fc-status--' + cls : '');
     statusEl.innerHTML = html;
+  }
+
+  // Reflect the current location into the tab pressed-states and the sources
+  // footnote (which station the tides came from), so both stay honest.
+  function reflectLocation() {
+    var btns = locSetEl.querySelectorAll('.fc-loc');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-loc') === currentLoc.id ? 'true' : 'false');
+    }
+    if (tideSourceEl) {
+      tideSourceEl.href = 'https://tidesandcurrents.noaa.gov/stationhome.html?id=' + currentLoc.station;
+      tideSourceEl.textContent = 'NOAA station ' + currentLoc.station + ' (' + currentLoc.stationLabel.replace(/,\s*NOAA #\d+$/, '') + ')';
+    }
   }
 
   /* ---- shareable-link params (?date=YYYY-MM-DD&start=9:30am&end=3:30pm) ---- */
@@ -303,7 +343,8 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   function shareUrl() {
     var qs = 'date=' + encodeURIComponent(dateEl.value) +
       '&start=' + encodeURIComponent(startEl.value) +
-      '&end=' + encodeURIComponent(endEl.value);
+      '&end=' + encodeURIComponent(endEl.value) +
+      '&loc=' + encodeURIComponent(currentLoc.id);
     return location.origin + location.pathname + '?' + qs;
   }
   function syncUrl() {
@@ -321,11 +362,11 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
     setStatus('Pulling the live numbers for ' + date + '...', 'info');
     cardEl.classList.add('is-loading');
 
-    fetchAll(date)
+    fetchAll(date, currentLoc)
       .then(function (raw) {
         var errors = raw.errors;
         var f;
-        try { f = deriveConditions(date, raw.fc, raw.mar, raw.tide, errors, WIN_START, WIN_END); }
+        try { f = deriveConditions(date, raw.fc, raw.mar, raw.tide, errors, WIN_START, WIN_END, currentLoc); }
         catch (err) {
           cardEl.classList.remove('is-loading');
           cardEl.classList.add('is-empty');
@@ -364,6 +405,7 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   var qDate = parseDateParam(params.get('date'));
   var qStart = parseTimeParam(params.get('start'));
   var qEnd = parseTimeParam(params.get('end'));
+  var qLoc = params.get('loc');
   if (qDate) {
     if (qDate < dateEl.min) dateEl.min = qDate;   // allow a shared link outside the default range
     if (qDate > dateEl.max) dateEl.max = qDate;
@@ -371,6 +413,20 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   }
   if (qStart) startEl.value = qStart;
   if (qEnd) endEl.value = qEnd;
+  if (qLoc) currentLoc = locationById(qLoc);   // locationById falls back to the home base
+  reflectLocation();
+
+  // Pick a launch location: swap the location, keep the day/window, re-pull.
+  locSetEl.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.fc-loc');
+    if (!btn) return;
+    var loc = locationById(btn.getAttribute('data-loc'));
+    if (loc.id === currentLoc.id) return;
+    currentLoc = loc;
+    reflectLocation();
+    syncUrl();
+    load();
+  });
 
   formEl.addEventListener('submit', function (ev) { ev.preventDefault(); load(); });
   [dateEl, startEl, endEl].forEach(function (el) { el.addEventListener('change', load); });
@@ -409,6 +465,42 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   .fc-go { min-height: 44px; }
   .fc-copy { min-height: 44px; }
 
+  /* Launch location tabs (folder tabs sitting on top of the forecast card).
+     Placed right on the card so the rest of the page is undisturbed. The active
+     tab is white and bleeds 1px into the card so it reads as one folder. */
+  /* match the card's exact footprint so the outer tab edges line up straight
+     with the card's left and right edges */
+  .fc-locs { margin-top: 1.5rem; width: 1080px; max-width: 100%; }
+  .fc-locs__set { display: flex; flex-wrap: wrap; gap: 4px; align-items: stretch; }
+  .fc-loc {
+    flex: 1 1 140px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    text-align: left; cursor: pointer;
+    padding: 0.5rem 1.125rem 0.5625rem;
+    background: color-mix(in srgb, var(--color-ink) 5%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-slate) 20%, transparent);
+    border-bottom-color: transparent;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    transition: background-color 0.2s var(--ease-craft), color 0.2s var(--ease-craft),
+      border-color 0.2s var(--ease-craft);
+  }
+  .fc-loc__name { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.2; color: var(--color-slate); }
+  .fc-loc__sub { font-size: 0.6875rem; font-weight: 500; color: color-mix(in srgb, var(--color-slate) 88%, transparent); }
+  .fc-loc:hover { background: color-mix(in srgb, var(--color-azure) 9%, var(--color-surface)); }
+  .fc-loc:hover .fc-loc__name { color: var(--color-azure-ink); }
+  .fc-loc:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--color-azure); }
+  .fc-loc[aria-pressed="true"] {
+    background: var(--color-white);
+    border-color: color-mix(in srgb, var(--color-slate) 18%, transparent);
+    border-bottom-color: var(--color-white);
+    margin-bottom: -1px;                 /* overlap the card's top border to connect */
+    position: relative; z-index: 2;
+  }
+  .fc-loc[aria-pressed="true"] .fc-loc__name { color: var(--color-ink); }
+  .fc-loc[aria-pressed="true"] .fc-loc__sub { color: var(--color-azure-ink); }
+
+  @media (prefers-reduced-motion: reduce) { .fc-loc { transition: none; } }
+  @media (max-width: 560px) { .fc-loc { flex-basis: calc(50% - 4px); } }
+
   /* Status line */
   .fc-status { margin-top: 1.25rem; font-size: 0.9375rem; line-height: 1.5; color: var(--color-slate); min-height: 1.5rem; }
   .fc-status b { color: var(--color-ink); }
@@ -416,10 +508,10 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2 } from '
   .fc-status-warn { display: block; margin-top: 0.25rem; color: #9a5a00; }
 
   /* Card frame + loading/empty states */
-  .fc-cardwrap { margin-top: 1.25rem; overflow-x: auto; }
+  .fc-cardwrap { margin-top: 0; overflow-x: auto; }
   .fc-card {
     width: 1080px; max-width: 100%; background: var(--color-white); position: relative;
-    padding: clamp(22px, 1rem + 2vw, 44px) clamp(20px, 1rem + 2vw, 46px) 34px; border-radius: 28px;
+    padding: clamp(22px, 1rem + 2vw, 44px) clamp(20px, 1rem + 2vw, 46px) 34px; border-radius: 0 0 28px 28px;
     box-shadow: var(--shadow-lg); border: 1px solid color-mix(in srgb, var(--color-slate) 18%, transparent);
     transition: opacity 0.3s ease;
   }
