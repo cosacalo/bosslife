@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { LOCATIONS } from '../lib/boating-forecast.js';
 
@@ -8,7 +9,6 @@ const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : import.meta.env.BASE_URL + '/';
 const logo = base + 'forecast-logo.png';
-const homeHref = base;
 ---
 
 <Base
@@ -21,15 +21,13 @@ const homeHref = base;
   {/* Live forecast tool, linked from the main nav (as a real page, with an arrow
       marker to distinguish it from the in-page anchor jumps). All data is fetched
       client-side from Open-Meteo (NOAA models) and NOAA CO-OPS, both CORS-open, so
-      this works on the static GitHub Pages build with no backend. */}
-  <header class="fc-topnav">
-    <div class="container-x fc-topnav__inner">
-      <a href={homeHref} aria-label="Boss Life Rentals, home">
-        <img src={logo} alt="Boss Life Rentals" width="150" height="75" />
-      </a>
-      <a href={homeHref} class="fc-topnav__back">Back to home</a>
-    </div>
-  </header>
+      this works on the static GitHub Pages build with no backend.
+
+      Full site nav (not a stripped tool header): renters often reach this page from
+      a shared forecast link and need to see this is a rental company, with a way
+      into the fleet and Book direct. `solid` renders the navy plate from the top
+      since there is no dark hero here. `onDetail` repoints anchors back home. */}
+  <Nav onDetail={true} solid={true} />
 
   <main id="forecast-app" class="fc-main">
     <div class="container-x">
@@ -437,13 +435,9 @@ import { fetchAll, deriveConditions, etToday, shiftYmd, timeToDec, pad2, locatio
 <style is:global>
   /* ===== Forecast page chrome ===== */
   #forecast-app { background-color: var(--color-surface); padding-bottom: clamp(3rem, 2rem + 4vw, 5rem); }
-  .fc-topnav { background-color: var(--color-ink); }
-  .fc-topnav__inner { display: flex; align-items: center; justify-content: space-between; padding-block: 0.75rem; }
-  .fc-topnav__inner img { height: 44px; width: auto; }
-  .fc-topnav__back { color: var(--color-white); font-weight: 600; font-size: 0.9375rem; }
-  .fc-topnav__back:hover { color: var(--color-sun); }
 
-  .fc-main { padding-top: clamp(2rem, 1.5rem + 3vw, 3.5rem); }
+  /* Top padding clears the fixed site nav (~64px) plus breathing room. */
+  .fc-main { padding-top: clamp(6rem, 5.25rem + 3vw, 7rem); }
   .fc-eyebrow { color: var(--color-azure-ink); margin-bottom: 0.75rem; }
   .fc-lede { margin-top: 1rem; max-width: 60ch; color: var(--color-ink); font-size: 1.0625rem; }
 

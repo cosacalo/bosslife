@@ -16,7 +16,9 @@ const base = import.meta.env.BASE_URL.endsWith('/')
 const logo = base + 'logo.png';
 
 // On detail pages, anchor links must point back to the home page section.
-const { onDetail = false } = Astro.props;
+// `solid` renders the navy surface plate from the top (for tool pages like the
+// forecast that have no dark hero for the transparent nav to sit on).
+const { onDetail = false, solid = false } = Astro.props;
 const root = onDetail ? base : '';
 
 const fleetHref = `${root}#fleet`;
@@ -28,7 +30,7 @@ const bookHref = `${root}#contact`;
 const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}` }));
 ---
 
-<header class="nav" data-nav>
+<header class:list={['nav', { 'nav--solid': solid }]} data-nav>
   <div class="container-x nav__inner">
     <a href={homeHref} class="nav__brand" aria-label="Boss Life Rentals, home">
       <img src={logo} alt="Boss Life Rentals" width="160" height="85" />
@@ -147,7 +149,8 @@ const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}
       padding 0.7s var(--ease-craft),
       backdrop-filter 0.3s var(--ease-craft);
   }
-  .nav.is-scrolled {
+  .nav.is-scrolled,
+  .nav--solid {
     background-color: color-mix(in srgb, var(--color-ink) 92%, transparent);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
@@ -403,13 +406,15 @@ const fleetUnits = units.map((u) => ({ name: u.name, href: `${base}fleet/${u.id}
     /* On scroll the bar stays pinned to the very top (like the original nav, no
        drop) but contracts inward into a centered, blurred surface with soft
        bottom corners. */
-    .nav.is-scrolled {
+    .nav.is-scrolled,
+    .nav--solid {
       background-color: transparent;
       box-shadow: none;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
-    .nav.is-scrolled .nav__inner {
+    .nav.is-scrolled .nav__inner,
+    .nav--solid .nav__inner {
       max-width: 1120px;
       padding-block: 0.5rem;
       padding-inline: 1.5rem;
